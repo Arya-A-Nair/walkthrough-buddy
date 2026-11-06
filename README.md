@@ -1,126 +1,200 @@
-# walkthrough-buddy
+<p align="center">
+  <img src="docs/img/logo.svg" alt="walkthrough-buddy" width="120">
+</p>
 
-An agent skill that turns a pull request, a folder, a feature or a whole repository into one page a newcomer reads once and then ships a change from.
+<h1 align="center">walkthrough-buddy</h1>
 
-It works with Claude Code, Codex, and other agents that load [Agent Skills](https://agentskills.io) (`SKILL.md`).
+<p align="center">
+  <strong>Understand any PR or codebase from one page, then make your first change.</strong>
+</p>
 
-![A walkthrough of pallets/click #3877, rendered](docs/img/hero.png)
+<p align="center">
+  <img src="https://img.shields.io/badge/Claude_Code-skill-1d1c1a?style=flat" alt="Claude Code skill">
+  <img src="https://img.shields.io/badge/Codex-skill-1d1c1a?style=flat" alt="Codex skill">
+  <img src="https://img.shields.io/badge/dependencies-none-4cc98a?style=flat" alt="No dependencies">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7fa2ff?style=flat" alt="MIT license"></a>
+</p>
 
-## Why
+<p align="center">
+  <a href="#before--after">Before/After</a> •
+  <a href="#whats-on-the-page">What's on the page</a> •
+  <a href="#adhd-mode">ADHD mode</a> •
+  <a href="#install">Install</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#how-it-works">How it works</a>
+</p>
 
-Most "explain this code" output reads well and is hard to trust. Excerpts get retyped from memory, line numbers drift, the test command is a guess, and the diagram turns out to be the folder tree. A newcomer can't tell which parts are real, so they end up reading the code anyway.
+---
 
-This skill keeps the friendly parts (diagrams, an analogy per idea, plain words) and makes every claim checkable:
+A skill for Claude Code and Codex. Point it at a pull request, a folder, a feature or a whole repo, and it builds a walkthrough page for someone who has never seen the code. The page has diagrams of how things connect, an "explain like I'm five" analogy for each hard idea, the real code with links to the exact lines, and a short "how to make your first change here" section at the end.
 
-- **Every code excerpt is copied from git at a pinned commit**, and a checker fails the page if one line doesn't match.
-- **Every `path:line` link points at a line that exists.**
-- **Every diagram is rendered in a real browser** before the page is handed over.
-- **Every command the reader is told to run** comes from the repo. It is marked ✅ if the agent ran it, or ⚠️ if not.
-- **The page ends with how to change the code, not how it works**: a recipe for adding another one of these, the test that proves it, the traps, and a starter task.
+## Before / After
 
-## What a page looks like
+You join a team and ask your agent: *"walk me through PR #3877"*
 
-Both examples below were made from public repos, and both are in [`examples/`](examples). Download one and open it in a browser.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-**Diagrams of what calls what, not of where the files live.** Each one has a caption that tells you what to notice.
+### Usual answer
 
-![Sequence diagram of commander.js parsing a subcommand](docs/img/sequence-diagram.png)
+> This PR introduces a new `spec` property on the `Parameter` class that returns the user-facing name of a parameter. Previously, `human_readable_name` was used, which returned the internal name for options. The PR deprecates `human_readable_name` and updates error messages, help output and warnings to use `spec`. It also moves `get_help_spec` from `Option` to `Parameter`. Tests were added in `test_options.py`. To contribute, run the tests with `pytest`…
 
-**Real code with a pinned permalink.** The tag says whether the code is new, changed or context.
+A summary you read once and forget. You still don't know where to start, which test to run, or whether the code it quoted is real.
 
-![A code excerpt from src/click/core.py with a NEW tag](docs/img/verified-excerpt.png)
+</td>
+<td width="50%" valign="top">
 
-**A contributor kit.** It covers which files to touch, in order, for the most common kind of change, plus the gotchas that cost people an afternoon.
+### With walkthrough-buddy
 
-![Recipe for adding an Option modifier to commander.js, and a watch-out list](docs/img/contribute-recipe.png)
+<img src="docs/img/hero.png" alt="Walkthrough page for click PR #3877">
 
-**A check at the end.** Questions with hidden answers, and a small real task with the files and test named.
+- one sentence on what changed for users
+- before/after diagrams
+- an ELI5: *"a coffee shop: the order slip, the ticket number, the menu board"*
+- every snippet copied from the real code, with line links
+- the exact test command, already run
+- "to add another one of these, touch these 5 files"
+- a starter task, with what "done" looks like
 
-![Check-yourself questions and a starter task](docs/img/check-yourself.png)
+</td>
+</tr>
+</table>
+
+## What's on the page
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Diagrams of the real flow, not the folder tree**
+
+<img src="docs/img/sequence-diagram.png" alt="Sequence diagram">
+
+</td>
+<td width="50%" valign="top">
+
+**Real code, linked to the exact lines**
+
+<img src="docs/img/verified-excerpt.png" alt="Code excerpt with permalink">
+
+**What the page did not cover**
+
+<img src="docs/img/trust-box.png" alt="Trust box with checker results and not-covered list">
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**How to change it: files in order, plus the traps**
+
+<img src="docs/img/contribute-recipe.png" alt="Recipe and watch-out list">
+
+</td>
+<td width="50%" valign="top">
+
+**Check yourself, then a starter task**
+
+<img src="docs/img/check-yourself.png" alt="Questions and starter task">
+
+</td>
+</tr>
+</table>
+
+Every page follows the same order: **big picture → before/after → glossary → main flow → code tour → how to contribute → check yourself**. Open one of the [`examples/`](examples) in a browser to read a full page.
+
+## ADHD mode
+
+Say *"I have ADHD"* or *"make it easier to read"*. You get the same content, cut into short timed parts. It also switches on by itself if you use the [`i-have-adhd`](https://github.com/ayghri/i-have-adhd) skill.
+
+<table>
+<tr>
+<td width="50%" valign="top" align="center"><strong>Standard</strong><br><br><img src="docs/img/standard-part.png" alt="Standard section"></td>
+<td width="50%" valign="top" align="center"><strong>ADHD mode</strong><br><br><img src="docs/img/adhd-part.png" alt="ADHD-mode section"></td>
+</tr>
+</table>
+
+- **Do this first:** one small action at the top that shows the code working
+- **Part 3 of 8 · ~2 min:** each part opens with a one-line summary and ends with "You can now…"
+- **Progress you can see:** a reading bar, a Done tick per part, and "~6 min left"
+- **Less to hold in your head:** short lists, short code snippets, short paragraphs
+- **Side notes folded away:** under "Extra, skip if busy"
 
 ## Install
 
-The skill is the folder `skills/walkthrough-buddy`. Put it where your agent looks for skills.
+Paste this into Claude Code or Codex:
 
-**Claude Code**
+```text
+Install the walkthrough-buddy skill from https://github.com/Arya-A-Nair/walkthrough-buddy
+```
+
+Or by hand:
 
 ```bash
 git clone https://github.com/Arya-A-Nair/walkthrough-buddy
-ln -s "$PWD/walkthrough-buddy/skills/walkthrough-buddy" ~/.claude/skills/walkthrough-buddy
+ln -s "$PWD/walkthrough-buddy/skills/walkthrough-buddy" ~/.claude/skills/   # Claude Code
+ln -s "$PWD/walkthrough-buddy/skills/walkthrough-buddy" ~/.agents/skills/   # Codex
 ```
 
-**Codex**
+## Usage
 
-```bash
-git clone https://github.com/Arya-A-Nair/walkthrough-buddy
-ln -s "$PWD/walkthrough-buddy/skills/walkthrough-buddy" ~/.agents/skills/walkthrough-buddy
-```
-
-To scope it to one repo, use `.claude/skills/` or `.agents/skills/` inside that repo instead. Copying the folder works as well as linking it.
-
-**Any agent with the `skills` CLI**
-
-```bash
-npx skills add Arya-A-Nair/walkthrough-buddy
-```
-
-## Use
-
-Ask for what you want; the skill triggers on intent:
+Just ask. It picks up on what you mean:
 
 ```text
 walk me through PR #482
 onboard me to src/billing before I touch it
-explain this codebase like I'm new here, I need to fix a bug in the parser tomorrow
+explain this codebase, I start on the parser tomorrow
 ELI5 how the retry queue works, end to end
-I'm handing this service over, write the walkthrough for whoever picks it up
+I have ADHD, give me the short version of how auth works here
+I'm leaving this team, write the handover walkthrough for this service
 ```
 
-You can also say who the reader is ("for a designer", "for a new grad") and it adjusts the depth and vocabulary. Ask for Markdown if you want to commit the result or paste it into a PR comment; GitHub renders the diagrams.
+| You can point it at | Example |
+|---|---|
+| a pull request | `#482`, or a GitHub/GitLab URL |
+| a branch, commit or range | `feature/retries`, `a1b2c3d`, `main..feature` |
+| a folder or file | `src/billing` |
+| a whole repo | `.` |
+| an idea | "how payments get retried" |
 
-The page lands in `.walkthroughs/` at the repo root, which is excluded locally through `.git/info/exclude`, so it never shows up in `git status`.
+Want it as Markdown, to paste into a PR or commit to the repo? Say so. GitHub renders the diagrams.
 
 ## How it works
 
-1. **Gather.** `scripts/gather.sh` resolves the target and collects the facts: base and head commits, the diff, the PR description and review threads (if `gh` is available), contributing docs, build and test entry points, and the tests next to the code.
-2. **Understand.** The agent reads whole files, traces one real input from where it enters to where it ends, and runs the safe commands in a throwaway worktree, so your checkout stays untouched.
-3. **Write.** It fills a fixed set of sections (big picture, before/after, glossary, main flow, code tour, contribute, check yourself) using `assets/template.html`. `scripts/excerpt.py` produces each code excerpt straight from git.
-4. **Check.** `scripts/check.py` verifies the excerpts, citations, required sections and diagram rendering. The page isn't delivered until it passes.
+```mermaid
+flowchart LR
+  ask(["walk me through PR #482"]) --> gather["collect facts<br/>diff, PR thread, docs, tests"]
+  gather --> read["read the code<br/>follow one real request<br/>run the tests"]
+  read --> write["write the page<br/>code copied from git"]
+  write --> check{"check"}
+  check -- "a snippet doesn't match<br/>a link is broken<br/>a diagram fails" --> write
+  check -- "all good" --> page(["your walkthrough"])
+```
 
-| File | What it's for |
+- **It reads before it writes.** It reads whole files, not just the diff, and follows one real input from start to finish.
+- **It runs things safely.** Tests and commands run in a temporary copy of the repo, so your checkout stays exactly as it was.
+- **It checks itself.** A script compares every snippet against the code, follows every link, and renders every diagram. The page is only handed over once that passes.
+- **It stays out of git.** The page is saved to `.walkthroughs/`, which is excluded locally, so it never shows up in `git status`.
+
+<details>
+<summary>What's in the skill folder</summary>
+
+| File | What it does |
 |---|---|
-| `SKILL.md` | The workflow the agent follows |
-| `references/sections.md` | The section contract, the Mermaid rules that prevent most render failures, and the writing rules |
-| `assets/template.html` | A self-contained page: light and dark themes, sticky contents, needs no build; Mermaid and highlight.js load from pinned CDN versions |
-| `scripts/gather.sh` | Read-only fact collection for a PR, range, commit, branch, path or concept |
-| `scripts/excerpt.py` | Copies an excerpt from git, escapes it and adds a permalink |
-| `scripts/check.py` | Verifies a finished page; exit 0 means it passed |
+| `SKILL.md` | The steps the agent follows |
+| `references/sections.md` | What goes in each part of the page, plus rules for diagrams and writing |
+| `references/adhd-mode.md` | How ADHD mode reshapes the page |
+| `assets/template.html` | The page design: light and dark themes, contents sidebar, progress tracking |
+| `scripts/gather.sh` | Collects the facts about the PR or folder |
+| `scripts/excerpt.py` | Copies a code snippet from git and adds a link to its lines |
+| `scripts/check.py` | Checks the finished page before it's handed over |
 
-## Does it help?
-
-Each target got two walkthroughs from the same model, one with the skill and one without. A separate agent wrote a quiz and a contribution task with a hidden test, without seeing either walkthrough. Fresh readers then took the quiz closed book and did the task. A grader scored the quiz blind.
-
-| | click PR, with | click PR, without | commander.js, with | commander.js, without |
-|---|---|---|---|---|
-| Closed-book quiz | **0.88** | 0.83 | **0.86** | 0.77 |
-| Contribution passes hidden test + full suite | yes | yes | yes | yes |
-| Code shown that is verbatim from the repo | **100%** | 44% | **96%** | 21% |
-| `path:line` links, all valid | **53** | 0 | **60** | 0 |
-
-Readers scored higher with the skill's pages. Every reader could do the task either way, because the repos are small and well tested. The clearest difference is that a reader can verify the skill's page against the source and can't do that with the other. There is one run per cell, so treat the numbers as a direction. The method, every artifact and the caveats are in [`evals/`](evals).
+</details>
 
 ## Requirements
 
-- `git`, `bash` and `python3` (standard library only)
-- Optional: `gh`, for PR descriptions and review comments
-- Optional: Chrome, Chromium, Edge or Brave, for the diagram render check. Without one, the checker says the diagrams are unverified instead of failing silently.
-
-## Limits
-
-- It explains code; it doesn't review it. Risks show up as "watch out" notes, credited to whoever raised them.
-- Commands that take a long time or touch real services are marked *not run here*. The skill won't claim it ran them.
-- The rendered page loads Mermaid and highlight.js from a CDN. Without network the text still reads fine, but the diagrams stay as source.
-- For a private repo, the page contains your code. It stays on disk unless you share it.
+`git`, `bash` and `python3`. Optional: the `gh` CLI, to read PR descriptions and review comments, and Chrome, Edge or Brave, to check that diagrams render.
 
 ## License
 

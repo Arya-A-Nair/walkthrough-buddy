@@ -83,7 +83,34 @@ details summary { cursor: pointer; font-weight: 600; }
   dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: 8px; }
 }
 @media print { nav.toc { display: none; } .layout { display: block; } }
+/* trust box: numbers come from check.py --stamp, never from the author */
+aside.trust { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 12px 16px; margin: 20px 0 0; font-size: 14px; }
+aside.trust .verdict { font-weight: 600; margin: 0 0 6px; }
+aside.trust .verdict.unchecked { color: var(--gotcha); }
+aside.trust .verdict.ok::before { content: "✓ "; color: var(--try); }
+aside.trust ul { margin: 6px 0 0; padding-left: 20px; }
+aside.trust .label { font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+/* ADHD mode: <body class="adhd"> (see references/adhd-mode.md) */
+body.adhd { font-size: 17px; line-height: 1.75; }
+body.adhd p, body.adhd li { max-width: 64ch; }
+body.adhd section { padding-top: 56px; }
+.start-here { border: 2px solid var(--try); border-radius: var(--radius); background: var(--surface); padding: 14px 18px; margin: 20px 0 8px; }
+.start-here p { margin: 6px 0; }
+.start-here strong { color: var(--try); }
+p.tldr { font-size: 1.05em; font-weight: 600; background: var(--surface-2); border-radius: 8px; padding: 8px 12px; }
+p.won { border-top: 1px dashed var(--line); padding-top: 10px; color: var(--try); font-weight: 600; }
+p.won::before { content: "✓ "; }
+.part { font: 600 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.part label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 13px; color: var(--ink); }
+.part input { width: 16px; height: 16px; accent-color: var(--try); }
+section.done > :not(.part) { opacity: .55; }
+details.extra { background: transparent; border-style: dashed; }
+details.extra summary { color: var(--muted); font-weight: 500; }
+#progress { position: fixed; top: 0; left: 0; height: 4px; background: var(--try); width: 0; z-index: 10; transition: width .15s; }
+#timeleft { position: fixed; right: 16px; bottom: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font: 600 12px/1 var(--mono); color: var(--muted); z-index: 10; }
+nav.toc a.is-done { text-decoration: line-through; opacity: .6; }
 </style>
+<meta name="walkthrough:checked" content='{"commit":"2247b35ea1","date":"2026-11-06","excerpts":12,"links":62,"diagrams":4,"rendered":true,"ran":4,"not_run":2,"inferred":1}'>
 </head>
 <body>
 <div class="layout">
@@ -96,6 +123,16 @@ details summary { cursor: pointer; font-weight: 600; }
   <div class="meta">
     <span>pallets/click #3877</span><span>at <code>2247b35</code></span><span>7 files, +266/−26</span><span>~12 min read</span>
   </div>
+  <aside class="trust">
+    <p class="verdict unchecked">Not checked yet: run check.py --stamp.</p>
+    <span class="label">Not covered here</span>
+    <ul class="not-covered">
+      <li><code>tox r -e typing</code>, <code>style</code> and <code>docs</code> not run: mypy, pyright, ruff and the Sphinx build were not checked for this PR.</li>
+      <li>Tests ran on one local Python on macOS. The CI matrix (<code>.github/workflows/tests.yaml:20-28</code>: Python 3.10 to 3.14, 3.14t, PyPy, Windows) was not run.</li>
+      <li>Tests ran at <code>ac0e297</code>, not <code>2247b35</code>. <code>src/click/core.py</code> and the three test files match; the rest of the tree was not compared.</li>
+      <li><code>Option._parse_decls</code> (<code>src/click/core.py:3449-3514</code>): only the lines that set <code>name</code> are shown.</li>
+    </ul>
+  </aside>
 </header>
 
 <section id="big-picture">
@@ -432,6 +469,14 @@ def test_spec(param_decls, expected_spec, expected_name):
     <tr><td><code>src/click/exceptions.py</code></td><td>Where error hints get used</td><td>Changing error wording</td></tr>
     <tr><td><code>tests/test_options.py</code>, <code>tests/test_arguments.py</code>, <code>tests/test_deprecations.py</code></td><td>The tests for all of the above</td><td>Before you open a PR</td></tr>
   </table>
+  <h3>Read these yourself</h3>
+  <ol class="read-list">
+    <li><code>docs/parameters.md:32-77</code>: the decls / spec / name vocabulary and the help-page example. 4 min.</li>
+    <li><code>src/click/core.py:3449-3514</code>: <code>Option._parse_decls</code>, how declarations become <code>name</code>, <code>opts</code> and <code>secondary_opts</code>. 5 min.</li>
+    <li><code>src/click/core.py:3023-3031</code>: <code>Parameter.get_error_hint</code> lists every entry of <code>opts</code> and uses <code>spec</code> only when <code>opts</code> is empty. 1 min.</li>
+    <li><code>src/click/exceptions.py:146-156</code>: <code>BadParameter.format_message</code>, where the hint reaches the user. 2 min.</li>
+    <li><code>tests/test_deprecations.py:71-104</code>: the tests for the alias warning and the subclass warning. 3 min.</li>
+  </ol>
 </section>
 
 <section id="data-model">
@@ -550,6 +595,16 @@ document.body.dataset.mermaid = 'done';
 </script>
 <script>
 document.querySelectorAll('pre code[class*="language-"]').forEach(el => { try { hljs.highlightElement(el); } catch (_) {} });
+(() => {
+  const m = document.querySelector('meta[name="walkthrough:checked"]'), v = document.querySelector('aside.trust .verdict');
+  if (!m || !v) return;
+  try {
+    const f = JSON.parse(m.content), pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+    v.className = 'verdict ok';
+    v.textContent = `Checked against ${f.commit} on ${f.date}: ${pl(f.excerpts, 'excerpt')} match the source, ${pl(f.links, 'link')} point at real lines, ` +
+      `${pl(f.diagrams, 'diagram')} ${f.rendered ? 'render' : '(rendering not verified)'}. ${f.ran} ran, ${f.not_run} not run, ${f.inferred} marked inferred.`;
+  } catch (_) {}
+})();
 const toc = document.querySelector('nav.toc ol');
 const sections = [...document.querySelectorAll('main section[id]')];
 sections.forEach(s => {
@@ -562,6 +617,30 @@ const io = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); links.get(e.target.id)?.classList.add('active'); }
 }), { rootMargin: '0px 0px -70% 0px' });
 sections.forEach(s => io.observe(s));
+if (document.body.classList.contains('adhd')) {
+  const total = sections.length, key = 'wb-done:' + location.pathname;
+  let done = {}; try { done = JSON.parse(localStorage.getItem(key) || '{}'); } catch (_) {}
+  const save = () => { try { localStorage.setItem(key, JSON.stringify(done)); } catch (_) {} };
+  const bar = document.createElement('div'); bar.id = 'progress'; document.body.append(bar);
+  const left = document.createElement('div'); left.id = 'timeleft'; left.setAttribute('aria-live', 'polite'); document.body.append(left);
+  const minutes = s => parseFloat(s.dataset.minutes || '0') || 0;
+  const update = () => {
+    const rest = sections.filter(s => !done[s.id]).reduce((m, s) => m + minutes(s), 0);
+    left.textContent = rest > 0 ? `~${Math.ceil(rest)} min left` : 'All parts done ✓';
+    sections.forEach(s => { s.classList.toggle('done', !!done[s.id]); links.get(s.id)?.classList.toggle('is-done', !!done[s.id]); });
+  };
+  sections.forEach((s, i) => {
+    const kicker = document.createElement('div'); kicker.className = 'part';
+    const t = document.createElement('span'); t.textContent = `Part ${i + 1} of ${total}` + (minutes(s) ? ` · ~${minutes(s)} min` : '');
+    const lab = document.createElement('label'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!done[s.id];
+    cb.addEventListener('change', () => { done[s.id] = cb.checked; save(); update(); });
+    lab.append(cb, 'Done'); kicker.append(t, lab); s.prepend(kicker);
+  });
+  addEventListener('scroll', () => {
+    const h = document.documentElement; bar.style.width = (100 * h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight)) + '%';
+  }, { passive: true });
+  update();
+}
 </script>
 </body>
 </html>

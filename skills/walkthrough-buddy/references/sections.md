@@ -2,6 +2,15 @@
 
 Sections in this order. **Required** ids are enforced by `check.py`. Optional ones go in when the target has the thing they describe; drop them otherwise. In Markdown output, put `<a id="..."></a>` on the line above each `##` heading, and put `<!-- walkthrough:head SHA -->` / `<!-- walkthrough:base SHA -->` at the top.
 
+## 0. Trust box (required, in the header)
+
+`<aside class="trust">` sits under the title. It has two parts:
+
+- **The verdict line.** Leave the template's placeholder as it is. `check.py --stamp` writes the real numbers into the page when it passes: excerpts matched, links valid, diagrams rendered, commands run or not run, claims inferred. Never type those numbers yourself.
+- **Not covered here** (`<ul class="not-covered">`): 1–4 honest items naming what this page did not read fully, did not run, or only guessed. For example: "`docs/` build not run", "Windows path handling: read, not tested", "`_parse_decls` for arguments only skimmed". A page that claims to cover everything is the false confidence this box exists to prevent.
+
+In Markdown, put `<!-- trust -->` under the title, then a `**Not covered here**` list. `--stamp` writes the verdict line under the marker.
+
 ## 1. `big-picture` (required)
 
 - The answer sentence again, then 2–4 sentences: who uses this, when, and what would break without it.
@@ -34,7 +43,7 @@ Stops in reading order. Each stop follows the same four beats:
 3. **The real code:** an excerpt of 15 lines or fewer, using the markup below. For change targets, prefer a diff excerpt that shows the change itself.
 4. **Why it's built this way:** the constraint or trade-off (`.callout.why`), cited when it comes from docs or review. Mark it *(inferred)* when it comes from you.
 
-Close with a reading-order table: `file | what it's for | read it when`.
+Close with **Read these yourself**. It replaces a separate reading-order table, so don't add both: `<ol class="read-list">`, required, the 3–7 places in the code the reader should open after this page, in order. Each entry is `path:A-B` (exact lines; the checker checks both ends), what to look for there, and minutes to read. For example: "`src/click/core.py:2569-2583`, how `spec` picks the longest prefix, 3 min". This is the bridge from the page to the code. It tells the reader what the excerpts left out, so they don't mistake a tour for the whole code.
 
 ## 6. `data-model` (optional)
 

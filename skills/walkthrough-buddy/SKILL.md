@@ -1,6 +1,6 @@
 ---
 name: walkthrough-buddy
-description: Use when someone needs to understand unfamiliar code well enough to change it - a pull request, branch, commit range, folder, feature, request flow or whole repository. Triggers on "walk me through this PR", "explain this codebase", "onboard me to X", "ELI5 this module", "how does X work end to end", new-hire onboarding, handover notes, or orienting a reviewer before a review.
+description: Turns any pull request, branch, commit, folder, feature or whole repository into one onboarding page a newcomer reads once and then ships a change from - diagrams of what calls what, an ELI5 analogy for every idea, real code excerpts pinned to a commit and machine-checked, file:line links, run and test commands that were actually run, a recipe for the most common change, and a starter task. Has an ADHD mode with short timed parts, progress tracking and one next step. Use whenever someone needs to understand unfamiliar code well enough to change it - "walk me through this PR", "explain this codebase", "onboard me to src/billing", "ELI5 how the retry queue works", "I'm new to this repo", "how does X work end to end", new-hire onboarding, handover notes, or orienting a reviewer - even if they never say "walkthrough".
 ---
 
 # Walkthrough Buddy
@@ -13,6 +13,7 @@ Turn a piece of code into one page a newcomer can read top to bottom and then sh
 
 - **Target:** PR number or URL, `A..B` range, commit, branch, path, or a concept ("how billing retries work"). If it's missing, ask once.
 - **Reader:** default is a competent engineer who is new to this repo. If the user names someone else (non-engineer, designer, new grad), adjust vocabulary and depth, not structure.
+- **Mode:** standard (default) or **ADHD mode**. Use ADHD mode when the user asks for it ("ADHD mode", "I have ADHD", "easier to read", "I lose focus on long docs") or when the `i-have-adhd` skill is active in this session. If you turned it on by default, say so in the delivery line and offer a standard page. ADHD mode reshapes the page and covers the same content: read `references/adhd-mode.md` before writing.
 - **Format:** self-contained HTML (default). Use Markdown when the user wants it committed or posted as a PR comment, since GitHub renders Mermaid.
 
 Stay read-only on the repo. The only file you write is the output, and it goes outside version control (see Deliver).
@@ -36,11 +37,11 @@ Stay read-only on the repo. The only file you write is the output, and it goes o
 
    These are targets, not caps. If going one over teaches the main path, go over. If going under covers it, stop.
 
-5. **Write.** Copy `assets/template.html` and replace everything between `<!-- BODY START -->` and `<!-- BODY END -->`, or write Markdown. Fill the sections in `references/sections.md`, in that order. That file is the contract: section ids, what each one holds, Mermaid rules, the excerpt markup, and the writing rules. Read it before writing.
+5. **Write.** Copy `assets/template.html` and replace everything between `<!-- BODY START -->` and `<!-- BODY END -->`, or write Markdown. Fill the sections in `references/sections.md`, in that order, and in ADHD mode apply `references/adhd-mode.md` on top of them. That file is the contract: section ids, what each one holds, Mermaid rules, the excerpt markup, and the writing rules. Read it before writing.
 
    Make every code excerpt with `python3 <skill-dir>/scripts/excerpt.py <path> <A-B[,C-D]> --sha <head> --tag new|changed|context` (add `--base <base>` for a diff, `--old` for pre-change code, `--md` for Markdown). It copies from git, escapes the code and adds a pinned permalink. Hand-copied excerpts are where walkthroughs go wrong.
 
-6. **Check.** Run `python3 <skill-dir>/scripts/check.py <output> --repo <repo>`. It verifies that every excerpt matches the pinned commit, every `path:line` citation exists, required sections are present, no `{{placeholders}}` remain, and every diagram renders in a headless Chromium-family browser. Fix what it flags and re-run until it exits 0. On exit 3 (could not render), say diagrams are unverified. Never call it verified.
+6. **Check.** Run `python3 <skill-dir>/scripts/check.py <output> --repo <repo> --stamp`. It verifies that every excerpt matches the pinned commit, every `path:line` citation exists, required sections are present, no `{{placeholders}}` remain, and every diagram renders in a headless Chromium-family browser. Fix what it flags and re-run until it exits 0. On a pass, `--stamp` writes its own numbers into the page's trust box, so the reader sees what was verified rather than your claim about it. On exit 3 (could not render), say diagrams are unverified. Never call it verified.
 
 7. **Cold-read test** (for anything bigger than a small PR). If your harness can start a fresh subagent, give it only the output file and ask it to answer the page's "Check yourself" questions and outline the starter task, without opening the repo. Every question it gets wrong or hedges on points to a gap in the page. Fix the page, not the answer key. If you cannot start a subagent, reread the page cold as the named reader and do the same.
 
@@ -57,4 +58,5 @@ Stay read-only on the repo. The only file you write is the output, and it goes o
 | Excerpts retyped from memory | Copy from `git show <sha>:<path>` with real line numbers; the checker enforces this |
 | "Run `npm test`" with no proof | The command comes from the repo, and you ran it or labelled it |
 | Ends at "how it works" | Ends at "how you change it": recipe, test, gotchas, starter task |
+| Page sounds like it covered everything | The trust box lists what was not read or not run, and "Read these yourself" points at the exact lines the excerpts left out |
 | Review becomes the topic | Not a code review. Raise risks as "watch out" notes, and say who raised them |

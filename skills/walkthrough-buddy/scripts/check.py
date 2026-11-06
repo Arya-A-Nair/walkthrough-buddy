@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Verify a walkthrough before handing it over.
 
-  python3 check.py <walkthrough.html|.md> [--repo DIR] [--no-render]
+  python3 check.py <walkthrough.html|.md> [--repo DIR] [--no-render] [--stamp]
+
+--stamp  on a pass, write the results into the page (it powers the page's trust box).
 
 Checks:
   1. No unfilled {{placeholders}}.
@@ -157,6 +159,69 @@ document.getElementById('out').textContent = 'RESULT' + JSON.stringify(res);
     return json.loads(m.group(1)) if m else None
 
 
+def adhd_checks(doc, is_md):
+    """Shape rules from references/adhd-mode.md. Only runs when the page declares ADHD mode."""
+    body = re.sub(r"<details\b.*?</details>", "", doc, flags=re.S)
+    if is_md:
+        if "Do this first" not in doc:
+            fails.append("adhd: no start-here block ('**Do this first:**' line at the top)")
+        run = 0
+        for line in body.splitlines() + [""]:
+            run = run + 1 if re.match(r"\s{0,1}([-*]|\d+\.)\s", line) else 0
+            if run == (8 if re.match(r"\s{0,1}\d+\.", line) else 6):
+                fails.append(f"adhd: a list has more than 5 items (near {line.strip()[:50]!r})")
+        for lang, code in re.findall(r"```(\w*)\n(.*?)\n```", body, re.S):
+            if lang != "mermaid" and len([l for l in code.splitlines() if l.strip() and not ELISION.match(l)]) > 10:
+                fails.append(f"adhd: a {lang or 'code'} block is longer than 10 lines")
+        return
+    main = (re.search(r"<main\b.*?</main>", body, re.S) or re.search(r".*", body, re.S)).group(0)
+    if 'class="start-here"' not in doc:
+        fails.append('adhd: no <div class="start-here"> before the first section')
+    if 'class="adhd"' not in doc and "class='adhd'" not in doc:
+        fails.append('adhd: <body> is missing class="adhd", so progress, part labels and checkboxes will not appear')
+    for tag, sid, inner in re.findall(r'(<section\b[^>]*\bid="([^"]+)"[^>]*>)(.*?)</section>', main, re.S):
+        miss = [w for w, ok in (("data-minutes", "data-minutes=" in tag), ("tldr", 'class="tldr"' in inner),
+                                 ("won", 'class="won"' in inner)) if not ok]
+        if miss:
+            fails.append(f"adhd: section '{sid}' is missing {', '.join(miss)}")
+    for kind, inner in re.findall(r"<(ul|ol)\b[^>]*>((?:(?!<(?:ul|ol)\b).)*?)</\1>", main, re.S):
+        n = len(re.findall(r"<li\b", inner))
+        if n > (7 if kind == "ol" else 5):
+            first = re.sub(r"<[^>]+>", "", inner).strip()[:50]
+            fails.append(f"adhd: a {'numbered' if kind == 'ol' else 'bullet'} list has {n} items (max {7 if kind == 'ol' else 5}): {first!r}")
+    for m in re.finditer(r'<figure\b[^>]*class="[^"]*\bcode\b[^"]*"[^>]*\bdata-file="([^"]+)".*?<code\b[^>]*>(.*?)</code>', main, re.S):
+        lines = [l for l in html.unescape(re.sub(r"<[^>]+>", "", m.group(2))).splitlines() if l.strip()]
+        n, gaps = len([l for l in lines if not ELISION.match(l)]), len([l for l in lines if ELISION.match(l)])
+        if n > 10:
+            fails.append(f"adhd: excerpt of {m.group(1)} has {n} lines (max 10; split it into two stops)")
+        if gaps > 1:
+            fails.append(f"adhd: excerpt of {m.group(1)} skips code {gaps} times (max one '…'; split it into two stops)")
+    for para in re.findall(r"<p\b(?![^>]*class=\"(?:tldr|won)\")[^>]*>(.*?)</p>", main, re.S):
+        text = re.sub(r"<code\b.*?</code>", "x", para, flags=re.S)
+        text = html.unescape(re.sub(r"<[^>]+>", "", text))
+        n = len(re.findall(r"[.!?](?:\s+|$)(?=[A-Z(\"]|$)", text.strip()))
+        if n > 3:
+            warns.append(f"adhd: paragraph with {n} sentences (max 3): {text.strip()[:60]!r}")
+
+
+def stamp(path, doc, is_md, facts):
+    """Write the checker's own numbers into the page, so the trust box is not the author's claim."""
+    payload = json.dumps(facts, separators=(",", ":"))
+    if is_md:
+        line = (f"> **Checked against `{facts['commit']}` on {facts['date']}:** {facts['excerpts']} excerpts match the source, "
+                f"{facts['links']} links point at real lines, {facts['diagrams']} diagrams "
+                f"{'render' if facts['rendered'] else '(render not verified)'}. {facts['ran']} commands ran, "
+                f"{facts['not_run']} not run, {facts['inferred']} claims marked inferred. <!-- walkthrough:checked {payload} -->")
+        doc = re.sub(r"^> \*\*Checked against.*<!-- walkthrough:checked .*?-->$", lambda m: line, doc, flags=re.M) \
+            if "<!-- walkthrough:checked " in doc else doc.replace("<!-- trust -->", "<!-- trust -->\n" + line, 1)
+    else:
+        meta = f"<meta name=\"walkthrough:checked\" content='{html.escape(payload, quote=False)}'>"
+        pat = r"<meta name=\"walkthrough:checked\"[^>]*>"
+        doc = re.sub(pat, lambda m: meta, doc) if re.search(pat, doc) else doc.replace("</head>", meta + "\n</head>", 1)
+    open(path, "w", encoding="utf-8").write(doc)
+    print("stamped:", payload)
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -192,7 +257,9 @@ def main():
 
     text_only = re.sub(r"<(script|style)\b.*?</\1>", "", doc, flags=re.S)
     tracked = (git(repo, "ls-tree", "-r", "--name-only", HEAD or "HEAD") or "").splitlines()
-    for p, ln in sorted(set(re.findall(r"(?<![\w/.])((?:[\w.-]+/)*\w[\w.-]*\.[a-z]{1,5}):L?(\d+)\b", text_only))):
+    links = 0
+    for p, ln, end in sorted(set(re.findall(r"(?<![\w/.])((?:[\w.-]+/)*\w[\w.-]*\.[a-z]{1,5}):L?(\d+)(?:-L?(\d+))?\b", text_only))):
+        ln = max(int(ln), int(end or 0))
         if "/" not in p and p not in tracked:
             hits = [f for f in tracked if f.rsplit("/", 1)[-1] == p]
             if len(hits) != 1:
@@ -203,14 +270,23 @@ def main():
         src = file_at(repo, HEAD, p) or (file_at(repo, base, p) if base else None)
         if src is None:
             fails.append(f"citation {p}:{ln}: no such file at head{' or base' if base else ''}")
-        elif int(ln) > len(src.splitlines()):
+        elif ln > len(src.splitlines()):
             fails.append(f"citation {p}:{ln}: file has only {len(src.splitlines())} lines")
+        else:
+            links += 1
 
     ids = set(re.findall(r'<(?:section|a)\b[^>]*\bid="([^"]+)"', doc))
-    need = REQUIRED + (CHANGE_REQUIRED if base else [])
+    adhd = bool(re.search(r'<meta name="walkthrough:mode" content="adhd"|<!--\s*walkthrough:mode\s+adhd\s*-->', doc))
+    need = REQUIRED + (CHANGE_REQUIRED if base else []) + (["next"] if adhd else [])
+    if adhd:
+        adhd_checks(doc, is_md)
     for r in need:
         if r not in ids:
             fails.append(f"missing required section id '{r}' (see references/sections.md)")
+    for cls, md_phrase, what in (("not-covered", "Not covered", "a 'Not covered here' list in the trust box"),
+                                 ("read-list", "Read these yourself", "a 'Read these yourself' list in the code tour")):
+        if not (md_phrase in doc if is_md else re.search(rf'class="[^"]*\b{cls}\b', doc)):
+            fails.append(f"missing {what} (see references/sections.md)")
 
     blocks = mermaid_blocks(doc, is_md)
     if not blocks:
@@ -233,6 +309,12 @@ def main():
         print("FAIL ", f)
     print(f"\n{n} excerpts, {len(blocks)} diagrams, {len(fails)} failures, {len(warns)} warnings"
           + ("" if fails or unverified else " — ALL CHECKS PASSED") + (" — RENDER UNVERIFIED" if unverified and not fails else ""))
+    if "--stamp" in args and not fails:
+        stamp(path, doc, is_md, {
+            "commit": (HEAD or "working tree")[:10], "date": __import__("datetime").date.today().isoformat(),
+            "excerpts": n, "links": links, "diagrams": len(blocks), "rendered": not unverified,
+            "ran": doc.count("✅"), "not_run": doc.count("⚠️"), "inferred": len(re.findall(r"\(inferred\b", doc)),
+        })
     sys.exit(1 if fails else 3 if unverified else 0)
 
 

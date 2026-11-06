@@ -1,0 +1,4 @@
+interface:
+  display_name: "Walkthrough Buddy"
+  short_description: "Onboard to any PR or codebase in one verified page"
+  default_prompt: "Use $walkthrough-buddy to walk me through this PR so I can make my first change here."
