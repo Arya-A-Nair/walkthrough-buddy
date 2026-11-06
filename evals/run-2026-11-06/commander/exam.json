@@ -1,0 +1,105 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "type": "where",
+      "q": "You want to add a new Command setting (like allowExcessArguments) that subcommands created with .command() should pick up from their parent. Which file and methods must you touch?",
+      "answer": "lib/command.js: initialise the private field in the Command constructor, add a chainable public setter method (pattern: allowExcessArguments(allow = true) { this._x = !!allow; return this; }), and copy it in Command.copyInheritedSettings(), which .command() calls so subcommands inherit parent settings. Also update typings/index.d.ts.",
+      "key_points": [
+        "lib/command.js",
+        "field initialised in the Command constructor",
+        "copied in copyInheritedSettings() (called by .command())",
+        "setter returns this for chaining"
+      ]
+    },
+    {
+      "id": "q2",
+      "type": "where",
+      "q": "You need to change the 'Did you mean ...?' suggestion shown for a mistyped long option, e.g. to also consider hidden options. Where does that happen?",
+      "answer": "Command.unknownOption(flag) in lib/command.js builds the candidate list from createHelp().visibleOptions(command) long flags, walking up parent commands until one has enablePositionalOptions, then calls suggestSimilar() from lib/suggestSimilar.js, which does the edit-distance match and formats the '(Did you mean ...?)' text. Hidden options are excluded because visibleOptions filters them out.",
+      "key_points": [
+        "Command.unknownOption in lib/command.js",
+        "candidates come from Help.visibleOptions (which drops hidden options)",
+        "suggestSimilar() in lib/suggestSimilar.js does matching and formatting",
+        "only for flags starting with -- and when _showSuggestionAfterError"
+      ]
+    },
+    {
+      "id": "q3",
+      "type": "where",
+      "q": "You want to change how an option's flags are displayed in the left column of the help output (e.g. '-p, --pepper <type>'). Which file and method?",
+      "answer": "lib/help.js, Help.optionTerm(option) (returns option.flags); colouring is applied separately by Help.styleOptionTerm(). Users can override either via command.configureHelp().",
+      "key_points": [
+        "lib/help.js",
+        "Help.optionTerm()",
+        "styling separate in styleOptionTerm()",
+        "overridable via configureHelp()"
+      ]
+    },
+    {
+      "id": "q4",
+      "type": "whatif",
+      "q": "With .option('-a').option('-b').option('-c <v>'), what does parsing ['-abcx'] and ['-acb'] (from: 'user') give for opts()?",
+      "answer": "['-abcx'] -> { a: true, b: true, c: 'x' }: Command.parseOptions splits the short-option group, boolean flags are consumed one at a time (activeGroup = '-' + rest), and when it reaches an option that takes a value the remainder of the arg is the value. ['-acb'] -> { a: true, c: 'b' }: once -c (required value) is reached, 'b' is its value, not the -b flag.",
+      "key_points": [
+        "-abcx gives a:true, b:true, c:'x'",
+        "-acb gives a:true, c:'b' (b not set)",
+        "the rest of the group after an option that takes a value becomes its value",
+        "handled in Command.parseOptions combo-option branch"
+      ]
+    },
+    {
+      "id": "q5",
+      "type": "whatif",
+      "q": "For a leaf command with .option('--cheese [type]') and .argument('[n]'), what are opts() and args after parsing ['--cheese', '--verbose'] (with -v, --verbose also defined), ['--cheese', '-5'], and ['--', '--cheese']?",
+      "answer": "['--cheese','--verbose'] -> cheese: true, verbose: true: an optional option-argument only takes the next arg if it does not look like an option, and a missing optional value becomes true. ['--cheese','-5'] -> cheese: '-5': negative numbers are allowed as values unless some command in the hierarchy uses a digit short flag like -5. ['--','--cheese'] -> opts {} and args ['--cheese']: everything after '--' is a literal operand.",
+      "key_points": [
+        "optional value not taken from a following option-like arg; value becomes true",
+        "negative number accepted as value (negativeNumberArg) unless a digit short option exists",
+        "'--' stops option parsing; following args are operands",
+        "logic in Command.parseOptions"
+      ]
+    },
+    {
+      "id": "q6",
+      "type": "test",
+      "q": "How do you run the full test suite, and what does it actually run? What test framework is used?",
+      "answer": "From the repo root: npm test, which runs `node --test && npm run check:type:ts` (Node's built-in node:test runner with node:assert/strict, then tsd plus tsc -p tsconfig.ts.json for the TypeScript typings). It is not Jest. CONTRIBUTING.md also asks for `npm run check` (types, eslint, prettier); `npm run test-all` runs both.",
+      "key_points": [
+        "npm test",
+        "node --test (built-in node:test runner, not jest)",
+        "also runs check:type:ts (tsd + tsc on typings)",
+        "npm run check for lint/format/type before PR"
+      ]
+    },
+    {
+      "id": "q7",
+      "type": "test",
+      "q": "Where do tests live, how do you run one test file or one test case, and how do tests stop commander calling process.exit or printing?",
+      "answer": "Tests are in tests/ as tests/*.test.js (plus some .cjs/.mjs), named by area like options.choices.test.js or command.exitOverride.test.js. Run one file with `node --test tests/options.choices.test.js` and one case with `node --test --test-name-pattern=\"<test name>\" tests/<file>`. tests/testHelpers.js createTestCommand() returns a Command with .exitOverride() (throws CommanderError instead of process.exit) and configureOutput() with no-op writeOut/writeErr; parse with { from: 'user' }.",
+      "key_points": [
+        "tests/ directory, *.test.js files named by feature",
+        "node --test tests/<file>.test.js for one file",
+        "--test-name-pattern for a single test",
+        "createTestCommand in tests/testHelpers.js uses exitOverride + silenced configureOutput"
+      ]
+    },
+    {
+      "id": "q8",
+      "type": "why",
+      "q": "Why does Command._parseCommand call _parseOptionsEnv() after parseOptions() (the CLI), and why does _parseOptionsEnv check the existing value source before applying an env var?",
+      "answer": "Precedence is cli > env > config/default. Env is processed after CLI parsing so an option given on the command line is not also run through parseArg for the env value (code comment: 'after cli, so parseArg not called on both cli and env'). _parseOptionsEnv only applies the env value when the current value is undefined or its source is 'default', 'config' or 'env', so values from the cli or set by client code (unknown source) are not overwritten. Sources are tracked per option in _optionValueSources through setOptionValueWithSource, and implied values are applied next by _parseOptionsImplied.",
+      "key_points": [
+        "precedence: cli beats env, env beats default/config",
+        "env parsed after cli so parseArg is not called on both",
+        "value source tracked via setOptionValueWithSource / getOptionValueSource",
+        "does not overwrite cli or client-code (unknown source) values"
+      ]
+    }
+  ],
+  "task": {
+    "prompt": "Suggest the closest choice when an option or argument value is not in .choices()\n\nWhen a user mistypes a subcommand or a long option, commander adds a hint such as `(Did you mean serve?)`. Values restricted with `.choices()` don't get one:\n\n```js\nprogram.addOption(new Option('--colour <shade>').choices(['red', 'blue']));\n// $ app --colour rde\n// error: option '--colour <shade>' argument 'rde' is invalid. Allowed choices are red, blue.\n```\n\nPlease add the same suggestion, in the same format as the unknown command/option suggestions, at the end of the error message:\n\n```\nerror: option '--colour <shade>' argument 'rde' is invalid. Allowed choices are red, blue.\n(Did you mean red?)\n```\n\nRequirements:\n- Applies to `Option.choices()` (whether the value came from the command line or from `.env()`) and to `Argument.choices()`.\n- When several choices are equally close, list them all (`(Did you mean one of car, cat?)`), as the existing suggestions do.\n- No suggestion when nothing is close enough; the message must then stay exactly as it is today.\n- Honour `.showSuggestionAfterError(false)`, including when it is inherited by subcommands.\n- Errors thrown by a custom `argParser` that doesn't use choices are unchanged.\n- The error code (`commander.invalidArgument`) and exit code stay the same.\n- Existing tests (`npm test`) must still pass.",
+    "hidden_test_file": "tests/hidden.task.test.js",
+    "run_cmd": "node --test tests/hidden.task.test.js"
+  }
+}

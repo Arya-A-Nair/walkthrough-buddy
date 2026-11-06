@@ -1,0 +1,240 @@
+diff --git a/Readme.md b/Readme.md
+index 9f1ff3c..4263d57 100644
+--- a/Readme.md
++++ b/Readme.md
+@@ -840,7 +840,7 @@ error: unknown option '--unknown'
+ (add --help for additional information)
+ ```
+ 
+-The default behaviour is to suggest correct spelling after an error for an unknown command or option. You
++The default behaviour is to suggest correct spelling after an error for an unknown command or option, or for a value not in the `.choices()`. You
+ can disable this.
+ 
+ ```js
+diff --git a/lib/command.js b/lib/command.js
+index 9a3d03e..a7559ca 100644
+--- a/lib/command.js
++++ b/lib/command.js
+@@ -266,7 +266,7 @@ export class Command extends EventEmitter {
+   }
+ 
+   /**
+-   * Display suggestion of similar commands for unknown commands, or options for unknown options.
++   * Display suggestion of similar commands for unknown commands, options for unknown options, or choices for invalid choice values.
+    *
+    * @param {boolean} [displaySuggestion]
+    * @return {Command} `this` command for chaining
+@@ -602,7 +602,16 @@ Expecting one of '${allowedValues.join("', '")}'`);
+       return target.parseArg(value, previous);
+     } catch (err) {
+       if (err.code === 'commander.invalidArgument') {
+-        const message = `${invalidArgumentMessage} ${err.message}`;
++        let suggestion = '';
++        if (
++          this._showSuggestionAfterError &&
++          target.argChoices &&
++          typeof value === 'string' &&
++          !target.argChoices.includes(value)
++        ) {
++          suggestion = suggestSimilar(value, target.argChoices);
++        }
++        const message = `${invalidArgumentMessage} ${err.message}${suggestion}`;
+         this.error(message, { exitCode: err.exitCode, code: err.code });
+       }
+       throw err;
+diff --git a/tests/command.exitOverride.test.js b/tests/command.exitOverride.test.js
+index 5afdcda..963ce02 100644
+--- a/tests/command.exitOverride.test.js
++++ b/tests/command.exitOverride.test.js
+@@ -318,6 +318,30 @@ describe('Command.exitOverride', () => {
+     );
+   });
+ 
++  test('when option argument close to a choice then throw CommanderError with suggestion', (t) => {
++    t.mock.method(process.stderr, 'write', () => {});
++    const program = new commander.Command();
++    program
++      .exitOverride()
++      .addOption(
++        new commander.Option('--colour <shade>').choices(['red', 'blue']),
++      );
++
++    let caughtErr;
++    try {
++      program.parse(['--colour', 'rde'], { from: 'user' });
++    } catch (err) {
++      caughtErr = err;
++    }
++
++    expectCommanderError(
++      caughtErr,
++      1,
++      'commander.invalidArgument',
++      "error: option '--colour <shade>' argument 'rde' is invalid. Allowed choices are red, blue.\n(Did you mean red?)",
++    );
++  });
++
+   test('when command argument not in choices then throw CommanderError', (t) => {
+     t.mock.method(process.stderr, 'write', () => {});
+     const program = new commander.Command();
+diff --git a/tests/command.showSuggestionAfterError.test.js b/tests/command.showSuggestionAfterError.test.js
+index 4474a67..c3fdd5e 100644
+--- a/tests/command.showSuggestionAfterError.test.js
++++ b/tests/command.showSuggestionAfterError.test.js
+@@ -1,8 +1,9 @@
+-import { Command } from '../index.js';
++import { Argument, Command, Option } from '../index.js';
+ import { test, describe } from 'node:test';
+ import assert from 'node:assert/strict';
+ 
+ function getSuggestion(program, arg) {
++  const args = Array.isArray(arg) ? arg : [arg];
+   let message = '';
+   program.exitOverride().configureOutput({
+     writeErr: (str) => {
+@@ -11,7 +12,7 @@ function getSuggestion(program, arg) {
+   });
+ 
+   try {
+-    program.parse([arg], { from: 'user' });
++    program.parse(args, { from: 'user' });
+   } catch (err) {
+     /* empty */
+   }
+@@ -51,4 +52,28 @@ describe('Command.showSuggestionAfterError()', () => {
+     const suggestion = getSuggestion(program, '--exampel');
+     assert.equal(suggestion, null);
+   });
++  test('when option value not in choices and showSuggestionAfterError(false) then do not show suggestion', () => {
++    const program = new Command();
++    program.showSuggestionAfterError(false);
++    program.addOption(new Option('--colour <shade>').choices(['red', 'blue']));
++    const suggestion = getSuggestion(program, ['--colour', 'rde']);
++    assert.equal(suggestion, null);
++  });
++
++  test('when subcommand argument not in choices and inherited showSuggestionAfterError(false) then do not show suggestion', () => {
++    let message = '';
++    const program = new Command();
++    program
++      .showSuggestionAfterError(false)
++      .exitOverride()
++      .configureOutput({ writeErr: (str) => (message = str) });
++    program
++      .command('sub')
++      .addArgument(new Argument('<shade>').choices(['red', 'blue']))
++      .action(() => {});
++    assert.throws(() => program.parse(['sub', 'rde'], { from: 'user' }), {
++      code: 'commander.invalidArgument',
++    });
++    assert.doesNotMatch(message, /Did you mean/);
++  });
+ });
+diff --git a/tests/help.suggestion.test.js b/tests/help.suggestion.test.js
+index 92046e6..91e453e 100644
+--- a/tests/help.suggestion.test.js
++++ b/tests/help.suggestion.test.js
+@@ -1,6 +1,6 @@
+ import { test, describe } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { Command, Option } from '../index.js';
++import { Argument, Command, InvalidArgumentError, Option } from '../index.js';
+ 
+ // Note: setting up shared command configuration in getSuggestion,
+ // and looking for possible subcommand 'sub'.
+@@ -248,4 +248,82 @@ describe('Command.showSuggestionAfterError()', () => {
+     const suggestion = getSuggestion(program, ['sub', '--hepl']);
+     assert.equal(suggestion, '--help');
+   });
++  describe('choices suggestions', () => {
++    test('when option value close to one choice then suggest it', () => {
++      const program = new Command();
++      program.addOption(
++        new Option('--colour <shade>').choices(['red', 'blue']),
++      );
++      const suggestion = getSuggestion(program, ['--colour', 'rde']);
++      assert.equal(suggestion, 'red');
++    });
++
++    test('when option value close to several choices then suggest all', () => {
++      const program = new Command();
++      program.addOption(
++        new Option('--pet <kind>').choices(['car', 'cat', 'dog']),
++      );
++      const suggestion = getSuggestion(program, ['--pet', 'cax']);
++      assert.equal(suggestion, 'car, cat');
++    });
++
++    test('when option value not close to any choice then no suggestion', () => {
++      const program = new Command();
++      program.addOption(
++        new Option('--colour <shade>').choices(['red', 'blue']),
++      );
++      const suggestion = getSuggestion(program, ['--colour', 'green']);
++      assert.equal(suggestion, null);
++    });
++
++    test('when variadic option value close to choice then suggest it', () => {
++      const program = new Command();
++      program.addOption(
++        new Option('--colour <shade...>').choices(['red', 'blue']),
++      );
++      const suggestion = getSuggestion(program, ['--colour', 'red', 'bleu']);
++      assert.equal(suggestion, 'blue');
++    });
++
++    test('when env value close to choice then suggest it', (t) => {
++      process.env.COLOUR = 'rde';
++      t.after(() => delete process.env.COLOUR);
++      const program = new Command();
++      program.addOption(
++        new Option('--colour <shade>').choices(['red', 'blue']).env('COLOUR'),
++      );
++      const suggestion = getSuggestion(program, []);
++      assert.equal(suggestion, 'red');
++    });
++
++    test('when argument value close to choice then suggest it', () => {
++      const program = new Command();
++      program
++        .addArgument(new Argument('<shade>').choices(['red', 'blue']))
++        .action(() => {});
++      const suggestion = getSuggestion(program, ['bleu']);
++      assert.equal(suggestion, 'blue');
++    });
++
++    test('when subcommand argument value close to choice then suggest it', () => {
++      const program = new Command();
++      program
++        .command('sub')
++        .addArgument(new Argument('<shade>').choices(['red', 'blue']))
++        .action(() => {});
++      const suggestion = getSuggestion(program, ['sub', 'rde']);
++      assert.equal(suggestion, 'red');
++    });
++
++    test('when custom argParser throws then no suggestion', () => {
++      const program = new Command();
++      program.addOption(
++        new Option('--colour <shade>').argParser(() => {
++          throw new InvalidArgumentError('Nope.');
++        }),
++      );
++      const suggestion = getSuggestion(program, ['--colour', 'rde']);
++      assert.equal(suggestion, null);
++    });
++  });
+ });
+diff --git a/typings/index.d.ts b/typings/index.d.ts
+index e3d0b72..50d89f8 100644
+--- a/typings/index.d.ts
++++ b/typings/index.d.ts
+@@ -604,7 +604,7 @@ export class Command {
+   showHelpAfterError(displayHelp?: boolean | string): this;
+ 
+   /**
+-   * Display suggestion of similar commands for unknown commands, or options for unknown options.
++   * Display suggestion of similar commands for unknown commands, options for unknown options, or choices for invalid choice values.
+    */
+   showSuggestionAfterError(displaySuggestion?: boolean): this;
+ 

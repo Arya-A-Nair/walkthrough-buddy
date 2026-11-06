@@ -1,0 +1,101 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index 0c26e01..a65e0e5 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -19,6 +19,9 @@ Unreleased
+   for options, so its value changes from `my_option` to `--my-option`. Click no
+   longer reads it, and a subclass that overrides it gets a warning when the class
+   is defined. {pr}`3877`
++- {meth}`Parameter.to_info_dict` includes a `spec` key with the value of
++  {attr}`Parameter.spec`, so documentation generators can show how the user
++  spells each parameter.
+ 
+ ## Version 8.5.1
+ 
+diff --git a/src/click/core.py b/src/click/core.py
+index 59ed94e..211868d 100644
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -2502,6 +2502,9 @@ class Parameter(ABC):
+         Use :meth:`click.Context.to_info_dict` to traverse the entire
+         CLI structure.
+ 
++        .. versionchanged:: 8.6.0
++            Added the ``spec`` key, the value of :attr:`spec`.
++
+         .. versionchanged:: 8.3.0
+             Returns ``None`` for the :attr:`default` if it was not set.
+ 
+@@ -2509,6 +2512,7 @@ class Parameter(ABC):
+         """
+         return {
+             "name": self.name,
++            "spec": self.spec,
+             "param_type_name": self.param_type_name,
+             "opts": self.opts,
+             "secondary_opts": self.secondary_opts,
+diff --git a/tests/test_info_dict.py b/tests/test_info_dict.py
+index 58babcc..9083206 100644
+--- a/tests/test_info_dict.py
++++ b/tests/test_info_dict.py
+@@ -10,6 +10,7 @@ HELP_OPTION = (
+     None,
+     {
+         "name": "_click_default_help",
++        "spec": "--help",
+         "param_type_name": "option",
+         "opts": ["--help"],
+         "secondary_opts": [],
+@@ -31,6 +32,7 @@ NAME_ARGUMENT = (
+     click.Argument(["name"]),
+     {
+         "name": "name",
++        "spec": "NAME",
+         "param_type_name": "argument",
+         "opts": ["name"],
+         "secondary_opts": [],
+@@ -47,6 +49,7 @@ NUMBER_OPTION = (
+     click.Option(["-c", "--count", "number"], default=1),
+     {
+         "name": "number",
++        "spec": "--count",
+         "param_type_name": "option",
+         "opts": ["-c", "--count"],
+         "secondary_opts": [],
+@@ -188,6 +191,7 @@ HELLO_GROUP = (
+             click.Option(["--cache/--no-cache", "-c/-u"]),
+             {
+                 "name": "cache",
++                "spec": "--cache",
+                 "param_type_name": "option",
+                 "opts": ["--cache", "-c"],
+                 "secondary_opts": ["--no-cache", "-u"],
+@@ -343,3 +347,28 @@ def test_command_to_info_dict_multiple_arguments():
+     args = [p for p in params if p["param_type_name"] == "argument"]
+     assert [p["name"] for p in args] == ["src", "dst"]
+     assert [p["help"] for p in args] == ["source path", "destination path"]
++
++
++@pytest.mark.parametrize(
++    ("param", "expected_spec"),
++    [
++        pytest.param(click.Option(["-t", "--times"]), "--times", id="option"),
++        pytest.param(click.Argument(["filename"]), "FILENAME", id="argument"),
++        pytest.param(
++            click.Argument(["filename"], metavar="PATH"), "PATH", id="metavar"
++        ),
++    ],
++)
++def test_param_to_info_dict_spec(param, expected_spec):
++    assert param.to_info_dict()["spec"] == expected_spec
++
++
++def test_param_to_info_dict_spec_override():
++    """A subclass that overrides `spec` is reflected in the info dict."""
++
++    class CustomOption(click.Option):
++        @property
++        def spec(self):
++            return "--custom"
++
++    assert CustomOption(["--name"]).to_info_dict()["spec"] == "--custom"

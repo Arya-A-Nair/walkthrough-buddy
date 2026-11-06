@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commander.js walkthrough</title>
+<!-- checker reads these: excerpts are verified against these commits -->
+<meta name="walkthrough:head" content="ba6d13ddb4243e5913367734f8c159089ffe7834">
+<meta name="walkthrough:base" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --surface-2: #f3f1ec; --ink: #1d1c1a; --muted: #6b675f;
+  --line: #e4e0d8; --accent: #2f5fd0; --new: #1f8a4c; --changed: #b26b00; --gone: #b4232c;
+  --eli5: #7b4bc4; --why: #2f5fd0; --gotcha: #b4232c; --try: #1f8a4c;
+  --radius: 10px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131416; --surface: #1b1d20; --surface-2: #23262a; --ink: #e9e7e2; --muted: #a19d95;
+    --line: #33363b; --accent: #7fa2ff; --new: #4cc98a; --changed: #f0a73a; --gone: #ff7b84;
+    --eli5: #b994ff; --why: #7fa2ff; --gotcha: #ff7b84; --try: #4cc98a;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--sans); }
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 48px; max-width: 1180px; margin: 0 auto; padding: 32px 24px 96px; }
+nav.toc { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto; font-size: 14px; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+nav.toc li { counter-increment: s; margin: 2px 0; }
+nav.toc a { display: block; padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+nav.toc a::before { content: counter(s, decimal-leading-zero) "  "; font-family: var(--mono); font-size: 12px; opacity: .7; }
+nav.toc a:hover, nav.toc a.active { background: var(--surface-2); color: var(--ink); }
+main { min-width: 0; max-width: 780px; }
+header.hero { padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.kicker { font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 34px; line-height: 1.2; margin: 10px 0 12px; }
+.answer { font-size: 20px; line-height: 1.5; margin: 0 0 16px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+.meta code { font-size: 12px; }
+section { padding-top: 40px; }
+h2 { font-size: 24px; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+p, li { max-width: 72ch; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+pre code { background: none; padding: 0; }
+.callout { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin: 16px 0; box-shadow: 0 0 0 1px var(--line) inset; }
+.callout > .label { font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.callout.eli5 { border-color: var(--eli5); } .callout.eli5 > .label { color: var(--eli5); }
+.callout.why { border-color: var(--why); } .callout.why > .label { color: var(--why); }
+.callout.gotcha { border-color: var(--gotcha); } .callout.gotcha > .label { color: var(--gotcha); }
+.callout.try { border-color: var(--try); } .callout.try > .label { color: var(--try); }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+figure { margin: 20px 0; }
+figure.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; overflow-x: auto; }
+figure.diagram figcaption, figure.code figcaption { font-size: 13px; color: var(--muted); }
+figure.diagram figcaption { margin-top: 10px; }
+.mermaid { display: flex; justify-content: center; min-width: min-content; }
+figure.code { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+figure.code figcaption { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-family: var(--mono); font-size: 12px; overflow-x: auto; white-space: nowrap; }
+figure.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; }
+figure.code pre code.hljs { background: transparent; padding: 0; }
+.tag { font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 3px 6px; border-radius: 4px; border: 1px solid currentColor; }
+.tag.new { color: var(--new); } .tag.changed { color: var(--changed); } .tag.removed { color: var(--gone); } .tag.context { color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 16px 0; display: block; overflow-x: auto; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 700 11px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 6px 18px; }
+dl.glossary dt { font-weight: 600; } dl.glossary dd { margin: 0; color: var(--ink); }
+ol.trace { padding-left: 0; list-style: none; counter-reset: t; }
+ol.trace > li { counter-increment: t; position: relative; padding: 0 0 14px 40px; border-left: 2px solid var(--line); margin-left: 12px; }
+ol.trace > li::before { content: counter(t); position: absolute; left: -13px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--bg); font: 700 12px/24px var(--mono); text-align: center; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin: 10px 0; }
+details summary { cursor: pointer; font-weight: 600; }
+.checklist li { list-style: "☐  "; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; gap: 0; padding: 20px 16px 64px; }
+  nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  h1 { font-size: 28px; }
+  dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: 8px; }
+}
+@media print { nav.toc { display: none; } .layout { display: block; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Contents"><ol></ol></nav>
+<main>
+<header class="hero">
+  <div class="kicker">Codebase walkthrough</div>
+  <h1>Commander.js, from <code>parse()</code> to your action handler</h1>
+  <p class="answer">You declare a program's commands and options in code. Commander turns <code>process.argv</code> into option values, then calls your action or prints help or an error.</p>
+  <div class="meta">
+    <span>tj/commander.js</span><span>at <code>ba6d13d</code></span><span>area: <code>index.js</code>, <code>lib/</code> (6 files, about 4,180 lines), <code>typings/</code>, <code>tests/</code></span><span>~25 min read</span>
+  </div>
+</header>
+
+<section id="big-picture">
+  <h2>The big picture</h2>
+  <p>Commander is the argument parser behind a large number of Node.js CLIs. A CLI author builds a tree of <code>Command</code> objects, each with <code>Option</code>s and <code>Argument</code>s, and calls <code>program.parse()</code>. Commander works out which subcommand was meant, fills in option values, checks for mistakes, and calls the <code>.action()</code> handler. It also writes the <code>--help</code> text and the error messages. Without it, every CLI author would hand-roll <code>process.argv</code> slicing, help text and "unknown option" errors.</p>
+  <p>The package has zero production dependencies (<code>package.json</code> has only <code>devDependencies</code>), and the maintainers want to keep it that way (<code>CONTRIBUTING.md</code>, last paragraph). Almost all logic lives in one class, <code>Command</code>, in <code>lib/command.js</code> (2,790 lines).</p>
+
+  <div class="callout eli5"><span class="label">Like you're five</span>
+    <p>Think of a <b>restaurant order form</b>. Before the restaurant opens, the owner prints the form: which dishes exist (<b>subcommands</b>), which boxes you can tick (<b>boolean options</b>), and which blanks you fill in (<b>options with a value</b> and <b>command-arguments</b>). A customer hands in a scribbled note (<code>process.argv</code>). The clerk (<code>parse()</code>) reads the note word by word. A word that names a tick box goes onto the form (an <code>option:</code> event sets the value). A word that names a dish sends the note to that dish's own clerk (<code>_dispatchSubcommand</code>). Whatever is left fills the blanks in order (<code>_processArguments</code>). Then the kitchen cooks (<code>.action()</code>). A tick box that does not exist gets the note handed back with an error. So does a missing required blank (<code>error()</code> then <code>process.exit</code>). Asking for the menu gets you the menu (<code>Help.formatHelp</code>).</p>
+    <p><em>Where the analogy breaks:</em> the clerk does not read the whole note before deciding. Each command reads only the words it knows, and passes everything after the first unknown one to the subcommand's clerk.</p>
+  </div>
+
+  <figure class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  author(["CLI author's script"]) -->|"defines .command() .option()"| prog["program: Command"]
+  argv[/"process.argv"/] -->|"parse()"| prog
+  prog --> opt["Option, Argument"]
+  prog --> sub["sub-Command (children)"]
+  prog -->|"--help"| help["Help.formatHelp()"]
+  prog -->|"calls"| act["your .action() handler"]
+  prog -->|"bad input"| err["error() then _exit()"]
+  err --> exit["process.exit or exitOverride callback"]
+  help --> out[/"stdout or stderr"/]
+    </pre>
+    <figcaption>Notice that every path ends in one of three places: your action, help text, or an exit. Each <code>Command</code> in the tree owns its own options, arguments and children.</figcaption>
+  </figure>
+</section>
+
+<section id="glossary">
+  <h2>Glossary</h2>
+  <p>The repo defines its own vocabulary in <code>docs/terminology.md</code>. Use these words in issues and PRs; maintainers do.</p>
+  <dl class="glossary">
+    <dt><code>Command</code></dt><dd>A program or subcommand. It holds <code>options</code>, <code>registeredArguments</code>, <code>commands</code> (children) and <code>parent</code>. It is also an <code>EventEmitter</code>. Defined at <code>lib/command.js:14</code>.</dd>
+    <dt>option</dt><dd>A <code>-x</code> or <code>--long</code> token. Represented by <code>Option</code>, built from a flags string like <code>'-c, --colour &lt;shade&gt;'</code> in <code>lib/option.js:11</code>.</dd>
+    <dt>option-argument</dt><dd>The value an option takes. <code>&lt;x&gt;</code> means required (<code>option.required</code>), <code>[x]</code> means optional (<code>option.optional</code>), and <code>x...</code> means variadic. These are read from the flags string at <code>lib/option.js:15</code>.</dd>
+    <dt>command-argument</dt><dd>A positional value such as <code>&lt;size&gt;</code>. Represented by <code>Argument</code> (<code>lib/argument.js:3</code>). The code also calls these operands.</dd>
+    <dt>operands / unknown</dt><dd>The two buckets <code>parseOptions()</code> returns. Operands are non-option words seen before the first unknown option. Unknown is that first unknown option plus everything after it (<code>lib/command.js:1760</code>).</dd>
+    <dt><code>attributeName()</code></dt><dd>The camelCase key an option's value is stored under, with any <code>no-</code> prefix removed. <code>--dry-run</code> becomes <code>dryRun</code> (<code>lib/option.js:217</code>).</dd>
+    <dt>value source</dt><dd>Where an option's value came from: <code>'default'</code>, <code>'env'</code>, <code>'cli'</code>, <code>'implied'</code>, <code>'config'</code>. It is stored next to the value and decides what may overwrite what (<code>lib/command.js:944</code>).</dd>
+    <dt><code>parseArg</code></dt><dd>A custom function <code>(value, previous) =&gt; newValue</code> on an <code>Option</code> or <code>Argument</code>. <code>.choices()</code> and <code>.argParser()</code> both set it (<code>lib/option.js:132</code>).</dd>
+    <dt><code>CommanderError</code></dt><dd>The error carrying <code>exitCode</code> and a <code>code</code> like <code>'commander.unknownOption'</code>. It is thrown instead of exiting when <code>.exitOverride()</code> is set (<code>lib/error.js:4</code>).</dd>
+    <dt><code>Help</code></dt><dd>The class that builds help text. Every method is public so authors can override it with <code>.configureHelp()</code> (<code>lib/help.js:13</code>).</dd>
+  </dl>
+</section>
+
+<section id="main-flow">
+  <h2>The main flow: one real invocation</h2>
+  <p>Here is the program used in the trace below. It reuses the <code>--colour</code> option from <code>tests/options.choices.test.js:7</code> and adds a subcommand. It was run against this commit in a scratch copy, and the outputs shown are real.</p>
+<pre><code class="language-js">const program = new Command('pizza');
+program.command('order &lt;size&gt;')
+  .addOption(new Option('--colour &lt;shade&gt;').choices(['red', 'blue']))
+  .option('-d, --debug')
+  .action((size, opts) =&gt; console.log('ACTION', size, JSON.stringify(opts)));
+program.parse(process.argv.slice(2), { from: 'user' });</code></pre>
+
+  <figure class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as "user args"
+  participant P as "program (Command)"
+  participant S as "order (Command)"
+  participant O as "Option listener"
+  participant A as "action handler"
+  U->>P: parse(args, from user)
+  P->>P: _prepareUserArgs slices argv
+  P->>P: _parseCommand calls parseOptions
+  P->>S: _dispatchSubcommand(order)
+  S->>S: parseOptions(large -d --colour red)
+  S->>O: emit option:debug, option:colour
+  O->>O: parseArg (choices) then setOptionValueWithSource
+  S->>S: env, implied, mandatory, conflicts checks
+  S->>S: _processArguments fills processedArgs
+  S->>A: preAction hooks, then action(large, opts, cmd)
+    </pre>
+    <figcaption>Notice that the parent never sees <code>-d</code> or <code>--colour</code>. It finds the subcommand name in its operands and hands the rest to the child, which repeats the same <code>_parseCommand</code> cycle.</figcaption>
+  </figure>
+
+  <ol class="trace">
+    <li><code>pizza order large -d --colour red</code>. <code>parse()</code> saves or restores state, then <code>_prepareUserArgs</code> (<code>lib/command.js:992</code>) uses <code>from: 'user'</code> to keep all four words as user args.</li>
+    <li><code>program._parseCommand([], ['order','large','-d','--colour','red'])</code> calls <code>parseOptions</code>. The program has no option named <code>order</code>, so <code>order</code> and <code>large</code> go to <code>operands</code>. <code>-d</code> is not a program option, so it and everything after it go to <code>unknown</code> (<code>lib/command.js:1871</code>).</li>
+    <li><code>_findCommand('order')</code> matches (<code>lib/command.js:1570</code>). <code>_dispatchSubcommand</code> calls <code>order._parseCommand(['large'], ['-d','--colour','red'])</code> (<code>lib/command.js:1364</code>).</li>
+    <li>The child's <code>parseOptions</code> recognises <code>-d</code> and emits <code>option:debug</code> with no value. It recognises <code>--colour</code> as required, takes the next word and emits <code>option:colour</code> with <code>'red'</code> (<code>lib/command.js:1808</code>).</li>
+    <li>The listener from <code>addOption</code> runs <code>parseArg</code>. For <code>.choices()</code> that checks the allow-list. It then stores <code>colour='red'</code> with source <code>'cli'</code>. <code>debug</code> has no value, so it becomes <code>true</code> (<code>lib/command.js:699</code>).</li>
+    <li>Env vars, implied values, mandatory options and conflicts are applied and checked (<code>lib/command.js:1564</code>, <code>lib/command.js:1598</code>).</li>
+    <li><code>_processArguments</code> maps <code>['large']</code> onto the declared <code>&lt;size&gt;</code> (<code>lib/command.js:1440</code>). The action wrapper calls <code>fn('large', {debug: true, colour: 'red'}, cmd)</code>. Real output: <code>ACTION large {"debug":true,"colour":"red"}</code>, exit 0.</li>
+  </ol>
+
+  <h3>Where it can fail</h3>
+  <ul>
+    <li><b>Invalid value.</b> With <code>--colour orange</code>, <code>parseArg</code> throws <code>InvalidArgumentError</code>. <code>_callParseArg</code> (<code>lib/command.js:600</code>) prefixes the message, and <code>error()</code> exits 1. Real output: <code>error: option '--colour &lt;shade&gt;' argument 'orange' is invalid. Allowed choices are red, blue.</code></li>
+    <li><b>Unknown option or command.</b> <code>unknownOption</code> (<code>lib/command.js:2126</code>) and <code>unknownCommand</code> (<code>lib/command.js:2176</code>) build the message, including a "Did you mean" hint from <code>lib/suggestSimilar.js</code>.</li>
+    <li><b>Missing argument.</b> <code>_checkNumberOfArguments</code> (<code>lib/command.js:1415</code>) calls <code>missingArgument</code>, or <code>_excessArguments</code> when there are too many.</li>
+  </ul>
+</section>
+
+<section id="code-tour">
+  <h2>Code tour, in reading order</h2>
+
+  <h3>1. The entry point is tiny</h3>
+  <p><b>What it does:</b> <code>index.js</code> creates the shared <code>program</code> singleton and re-exports the classes.</p>
+  <figure class="code" data-file="index.js" data-lines="1-13">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/index.js#L1-L13">index.js:1-13</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">import { Argument } from './lib/argument.js';
+import { Command } from './lib/command.js';
+import { CommanderError, InvalidArgumentError } from './lib/error.js';
+import { Help } from './lib/help.js';
+import { Option } from './lib/option.js';
+
+export const program = new Command();
+
+export const createCommand = (name) =&gt; new Command(name);
+export const createOption = (flags, description) =&gt;
+  new Option(flags, description);
+export const createArgument = (name, description) =&gt;
+  new Argument(name, description);</code></pre>
+  </figure>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>The package switched to ESM only in <code>f4bd470</code> ("Switching to esm-only (#2464)"). <code>package.json</code> sets <code>"type": "module"</code>, and <code>exports</code> points types at <code>typings/index.d.ts</code>. The typings are hand-written, not generated, so any public API change has to be mirrored there by hand.</p></div>
+
+  <h3>2. <code>parse()</code> is three calls</h3>
+  <p><b>What it does:</b> it resets state, works out which <code>argv</code> entries are user args, and starts the recursive parse at the root.</p>
+  <figure class="code" data-file="lib/command.js" data-lines="1081-1087">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L1081-L1087">lib/command.js:1081-1087</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  parse(argv, parseOptions) {
+    this._prepareForParse();
+    const userArgs = this._prepareUserArgs(argv, parseOptions);
+    this._parseCommand([], userArgs);
+
+    return this;
+  }</code></pre>
+  </figure>
+  <div class="callout why"><span class="label">Why it's built this way</span><p><code>_prepareForParse</code> (<code>lib/command.js:1118</code>) saves state on the first parse and restores it on later ones. This came from <code>49423a2</code> ("Add save/restore state to allow multiple calls to parse"). Without it, calling <code>parse()</code> twice on one program would leak option values from the first call. <code>parseAsync</code> is the same three calls with <code>await</code>, for async action handlers.</p></div>
+
+  <h3>3. <code>_parseCommand</code>: the per-command loop</h3>
+  <p><b>What it does:</b> it parses this command's own options, applies env and implied values, then either hands off to a subcommand or runs this command's action.</p>
+  <figure class="code" data-file="lib/command.js" data-lines="1562-1572">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L1562-L1572">lib/command.js:1562-1572</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  _parseCommand(operands, unknown) {
+    const parsed = this.parseOptions(unknown);
+    this._parseOptionsEnv(); // after cli, so parseArg not called on both cli and env
+    this._parseOptionsImplied();
+    operands = operands.concat(parsed.operands);
+    unknown = parsed.unknown;
+    this.args = operands.concat(unknown);
+
+    if (operands &amp;&amp; this._findCommand(operands[0])) {
+      return this._dispatchSubcommand(operands[0], operands.slice(1), unknown);
+    }</code></pre>
+  </figure>
+  <p>The rest of the method (to <code>lib/command.js:1653</code>) is a decision ladder. It tries the help command, then the default command, then "has subcommands but none given, so show help". After that come the mandatory and conflict checks, and finally the action. When a command has no action it falls through (<code>lib/command.js:1651</code>), so a plain <code>program.parse(); program.opts()</code> script still works.</p>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>Env values are applied after CLI values so that <code>parseArg</code> is not called on both (comment at <code>lib/command.js:1564</code>). The order of the ladder sets which error a user sees first. The comment at <code>lib/command.js:1601</code> says the unknown-option check is deferred "to avoid masking a 'better' error, like unknown command".</p></div>
+
+  <h3>4. <code>parseOptions</code>: classify each token</h3>
+  <p><b>What it does:</b> it walks the args once. A known option emits an <code>option:&lt;name&gt;</code> event, and every other word goes to <code>operands</code> or <code>unknown</code>.</p>
+  <figure class="code" data-file="lib/command.js" data-lines="1804-1829">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L1804-L1829">lib/command.js:1804-1829</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">      if (maybeOption(arg)) {
+        const option = this._findOption(arg);
+        // recognised option, call listener to assign value with possible custom processing
+        if (option) {
+          if (option.required) {
+            const value = args[i++];
+            if (value === undefined) this.optionMissingArgument(option);
+            this.emit(`option:${option.name()}`, value);
+    // ...
+          } else {
+            // boolean flag
+            this.emit(`option:${option.name()}`);
+          }
+          activeVariadicOption = option.variadic ? option : null;
+          continue;
+        }
+      }</code></pre>
+  </figure>
+  <p>After this block the loop also handles <code>-abc</code> short-flag groups, <code>-cred</code> (a value glued to a short flag) and <code>--colour=red</code> (<code>lib/command.js:1851</code>). It also handles <code>--</code> (stop parsing), negative numbers, and the <code>enablePositionalOptions</code> and <code>passThroughOptions</code> modes.</p>
+  <figure class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  t["next token"] --> dd{"is it --"}
+  dd -->|yes| lit["rest go to dest verbatim"]
+  dd -->|no| known{"_findOption matches?"}
+  known -->|yes| emit["emit option:name with value"]
+  known -->|no| combo{"-abc or --x=y form of a known option?"}
+  combo -->|yes| emit
+  combo -->|no| unk{"looks like an option?"}
+  unk -->|"yes, first one"| sw["switch dest to unknown"]
+  unk -->|no| push["push to dest"]
+  sw --> push
+    </pre>
+    <figcaption>Notice the one-way switch: after the first unrecognised option, every later word lands in <code>unknown</code>. That is how a subcommand's options get past its parent without the parent knowing them.</figcaption>
+  </figure>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>Using events lets <code>parseOptions</code> stay ignorant of how values are stored or converted. Storing values belongs to whoever registered the listener, which is <code>addOption</code>. <code>parseOptions</code> is also public and tested on its own in <code>tests/command.parseOptions.test.js</code>. <em>(inferred)</em></p></div>
+
+  <h3>5. <code>addOption</code>: where a value becomes a value</h3>
+  <p><b>What it does:</b> it registers the option, stores any default, and subscribes a handler that applies <code>preset</code>, <code>parseArg</code> or variadic collection, then stores the result with its source.</p>
+  <figure class="code" data-file="lib/command.js" data-lines="683-714">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L683-L714">lib/command.js:683-714</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">    const handleOptionValue = (val, invalidValueMessage, valueSource) =&gt; {
+    // ...
+      // custom processing
+      const oldValue = this.getOptionValue(name);
+      if (val !== null &amp;&amp; option.parseArg) {
+        val = this._callParseArg(option, val, oldValue, invalidValueMessage);
+      } else if (val !== null &amp;&amp; option.variadic) {
+        val = option._collectValue(val, oldValue);
+      }
+    // ...
+      this.setOptionValueWithSource(name, val, valueSource);
+    };
+
+    this.on('option:' + oname, (val) =&gt; {
+      const invalidValueMessage = `error: option '${option.flags}' argument '${val}' is invalid.`;
+      handleOptionValue(val, invalidValueMessage, 'cli');
+    });</code></pre>
+  </figure>
+  <div class="callout eli5"><span class="label">Like you're five</span><p>Every value has a sticky note saying who wrote it: <code>default</code>, <code>env</code>, or <code>cli</code>. An env var may only overwrite a value whose note says <code>default</code>, <code>config</code> or <code>env</code>, never <code>cli</code> (<code>lib/command.js:1983</code>).</p></div>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>One handler serves both the CLI (<code>option:</code>) and env (<code>optionEnv:</code>) events, and only the error message and source differ (<code>lib/command.js:716</code>). <code>.option()</code> and <code>.requiredOption()</code> both go through <code>_optionEx</code> into this same method (<code>lib/command.js:732</code>). So <code>addOption</code> is the one place every option passes through.</p></div>
+
+  <h3>6. <code>Option</code>: a plain bag of settings</h3>
+  <p><b>What it does:</b> the constructor reads the flags string. Each chainable method (<code>default</code>, <code>preset</code>, <code>env</code>, <code>choices</code>, <code>conflicts</code>, <code>implies</code>, ...) sets one field and returns <code>this</code>.</p>
+  <figure class="code" data-file="lib/option.js" data-lines="181-195">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/option.js#L181-L195">lib/option.js:181-195</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  choices(values) {
+    this.argChoices = values.slice();
+    this.parseArg = (arg, previous) =&gt; {
+      if (!this.argChoices.includes(arg)) {
+        throw new InvalidArgumentError(
+          `Allowed choices are ${this.argChoices.join(', ')}.`,
+        );
+      }
+      if (this.variadic) {
+        return this._collectValue(arg, previous);
+      }
+      return arg;
+    };
+    return this;
+  }</code></pre>
+  </figure>
+  <div class="callout why"><span class="label">Why it's built this way</span><p><code>choices</code> is built on top of <code>parseArg</code> instead of adding a separate validation step. That is why the error comes out through <code>_callParseArg</code> and reads like any other invalid value. It copies the array (<code>values.slice()</code>) because the TypeScript signature promises <code>readonly string[]</code> (<code>typings/index.d.ts:184</code>). Three tests guard that promise (<code>tests/options.choices.test.js:27</code>).</p></div>
+
+  <h3>7. Errors funnel through <code>error()</code> and <code>_exit()</code></h3>
+  <p><b>What it does:</b> it writes the message to stderr, optionally shows help, then exits. Exiting means calling the <code>exitOverride</code> callback if one is set, and <code>process.exit</code> otherwise.</p>
+  <figure class="code" data-file="lib/command.js" data-lines="600-610">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L600-L610">lib/command.js:600-610</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  _callParseArg(target, value, previous, invalidArgumentMessage) {
+    try {
+      return target.parseArg(value, previous);
+    } catch (err) {
+      if (err.code === 'commander.invalidArgument') {
+        const message = `${invalidArgumentMessage} ${err.message}`;
+        this.error(message, { exitCode: err.exitCode, code: err.code });
+      }
+      throw err;
+    }
+  }</code></pre>
+  </figure>
+  <figure class="code" data-file="lib/command.js" data-lines="534-540">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L534-L540">lib/command.js:534-540</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  _exit(exitCode, code, message) {
+    if (this._exitCallback) {
+      this._exitCallback(new CommanderError(exitCode, code, message));
+      // Expecting this line is not reached.
+    }
+    process.exit(exitCode);
+  }</code></pre>
+  </figure>
+  <figure class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  pa["parseArg throws InvalidArgumentError"] --> cpa["_callParseArg adds context"]
+  other["unknownOption, missingArgument, ..."] --> e["error(message, code)"]
+  cpa --> e
+  e --> w["writeErr, optional help"]
+  w --> x["_exit(exitCode, code)"]
+  x -->|"exitOverride set"| thr["callback gets CommanderError (tests throw)"]
+  x -->|"not set"| pe["process.exit(exitCode)"]
+    </pre>
+    <figcaption>Notice that every user-facing failure goes through one funnel. Tests depend on this: they set <code>exitOverride()</code> so a failure throws instead of killing the test runner.</figcaption>
+  </figure>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>A library that calls <code>process.exit</code> is hard to embed or test. <code>exitOverride</code> is the escape hatch, and the "Expecting this line is not reached" comment shows the callback is expected to throw. Only errors whose <code>code</code> is <code>'commander.invalidArgument'</code> are turned into friendly messages. Any other exception from a <code>parseArg</code> is rethrown as is.</p></div>
+
+  <h3>8. The action wrapper and hooks</h3>
+  <p><b>What it does:</b> after arguments are processed, it runs <code>preAction</code> hooks, then your handler, then <code>postAction</code>. It chains promises only if something returned one.</p>
+  <figure class="code" data-file="lib/command.js" data-lines="1608-1624">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L1608-L1624">lib/command.js:1608-1624</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">    const commandEvent = `command:${this.name()}`;
+    if (this._actionHandler) {
+      checkForUnknownOptions();
+      this._processArguments();
+    // ...
+      let promiseChain;
+      promiseChain = this._chainOrCallHooks(promiseChain, 'preAction');
+      promiseChain = this._chainOrCall(promiseChain, () =&gt;
+        this._actionHandler(this.processedArgs),
+      );
+    // ...
+      promiseChain = this._chainOrCallHooks(promiseChain, 'postAction');
+      return promiseChain;</code></pre>
+  </figure>
+  <figure class="code" data-file="lib/command.js" data-lines="557-572">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/command.js#L557-L572">lib/command.js:557-572</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  action(fn) {
+    const listener = (args) =&gt; {
+      // The .action callback takes an extra parameter which is the command or options.
+      const expectedArgsCount = this.registeredArguments.length;
+      const actionArgs = args.slice(0, expectedArgsCount);
+    // ...
+      } else {
+        actionArgs[expectedArgsCount] = this.opts();
+      }
+      actionArgs.push(this);
+
+      return fn.apply(this, actionArgs);
+    };
+    this._actionHandler = listener;
+    return this;</code></pre>
+  </figure>
+  <div class="callout eli5"><span class="label">Like you're five</span><p><code>_chainOrCall</code> (<code>lib/command.js:1493</code>) is "do it now, unless someone handed me a promise, then do it after". So a sync program stays fully sync, and <code>parse()</code> returns before anything async finishes. Use <code>parseAsync()</code> when actions are async.</p></div>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>Your handler receives <code>(arg1..argN, opts, command)</code>. It gets exactly as many positional values as there are declared arguments, then the options object, then the command (<code>lib/command.js:560</code>). Extra words are not passed in. They are still on <code>command.args</code>.</p></div>
+
+  <h3>9. Help is a separate, overridable class</h3>
+  <p><b>What it does:</b> <code>helpInformation()</code> (<code>lib/command.js:2464</code>) builds a <code>Help</code>, and <code>formatHelp</code> (<code>lib/help.js:444</code>) asks it for visible options, terms and descriptions, then lays out the columns.</p>
+  <figure class="code" data-file="lib/help.js" data-lines="326-334">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/lib/help.js#L326-L334">lib/help.js:326-334</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  optionDescription(option) {
+    const extraInfo = [];
+
+    if (option.argChoices) {
+      extraInfo.push(
+        // use stringify to match the display of the default value
+        `choices: ${option.argChoices.map((choice) =&gt; JSON.stringify(choice)).join(', ')}`,
+      );
+    }</code></pre>
+  </figure>
+  <p>That is where <code>(choices: "red", "blue")</code> in the real help output comes from:</p>
+<pre><code>Usage: pizza order [options] &lt;size&gt;
+
+Options:
+  --colour &lt;shade&gt;  (choices: "red", "blue")
+  -d, --debug
+  -h, --help        display help for command</code></pre>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>Every <code>Help</code> method is public and small (<code>optionTerm</code>, <code>optionDescription</code>, <code>styleTitle</code>, ...). Authors can replace one piece through <code>.configureHelp({...})</code> without forking the layout. Each method has its own test file (<code>tests/help.*.test.js</code>). The depth guide is <code>docs/help-in-depth.md</code>.</p></div>
+
+  <h3>10. Tests: <code>node:test</code> plus a helper</h3>
+  <p><b>What it does:</b> most tests build a command with <code>createTestCommand()</code>, call <code>parse([...], { from: 'user' })</code>, and assert on <code>opts()</code> or on a thrown error.</p>
+  <figure class="code" data-file="tests/testHelpers.js" data-lines="12-21">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/tests/testHelpers.js#L12-L21">tests/testHelpers.js:12-21</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">export function createTestCommand() {
+  const cmd = new Command();
+  cmd
+    .exitOverride() // So we get exceptions instead of process.exit
+    .configureOutput({
+      writeOut: () =&gt; {},
+      writeErr: () =&gt; {},
+    });
+  return cmd;
+}</code></pre>
+  </figure>
+  <figure class="code" data-file="tests/options.choices.test.js" data-lines="7-14">
+    <figcaption><a href="https://github.com/tj/commander.js/blob/ba6d13ddb4243e5913367734f8c159089ffe7834/tests/options.choices.test.js#L7-L14">tests/options.choices.test.js:7-14</a><span class="tag context">context</span></figcaption>
+    <pre><code class="language-js">  test('when option argument in choices then option set', () =&gt; {
+    const program = new commander.Command();
+    program.addOption(
+      new commander.Option('--colour &lt;shade&gt;').choices(['red', 'blue']),
+    );
+    program.parse(['--colour', 'red'], { from: 'user' });
+    assert.equal(program.opts().colour, 'red');
+  });</code></pre>
+  </figure>
+
+  <h3>Reading-order table</h3>
+  <table>
+    <tr><th>file</th><th>what it's for</th><th>read it when</th></tr>
+    <tr><td><code>docs/terminology.md</code></td><td>the words: option, option-argument, command-argument</td><td>first, 2 minutes</td></tr>
+    <tr><td><code>index.js</code></td><td>public exports, the <code>program</code> singleton</td><td>first</td></tr>
+    <tr><td><code>lib/command.js</code></td><td>everything: definition API, parse, dispatch, errors, help glue</td><td>any behaviour change. Start at <code>parse</code> (line 1081)</td></tr>
+    <tr><td><code>lib/option.js</code></td><td><code>Option</code>, flag splitting, camelCase names, <code>DualOptions</code> for <code>--x</code>/<code>--no-x</code> pairs</td><td>adding or changing an option modifier</td></tr>
+    <tr><td><code>lib/argument.js</code></td><td><code>Argument</code> (the positional twin of <code>Option</code>)</td><td>command-argument changes</td></tr>
+    <tr><td><code>lib/help.js</code></td><td><code>Help</code>: layout, wrapping, styling</td><td>help-text changes</td></tr>
+    <tr><td><code>lib/error.js</code>, <code>lib/suggestSimilar.js</code></td><td>error classes, "Did you mean"</td><td>error-message changes</td></tr>
+    <tr><td><code>typings/index.d.ts</code>, <code>typings/index.test-d.ts</code></td><td>hand-written public types and their <code>tsd</code> tests</td><td>any public API change</td></tr>
+    <tr><td><code>tests/&lt;class&gt;.&lt;feature&gt;.test.js</code></td><td>one file per feature (112 files)</td><td>before touching that feature</td></tr>
+  </table>
+</section>
+
+<section id="data-model">
+  <h2>The object model</h2>
+  <figure class="diagram">
+    <pre class="mermaid">
+classDiagram
+  class Command {
+    options
+    registeredArguments
+    commands
+    parent
+    parse()
+    opts()
+  }
+  class Option {
+    flags
+    required
+    optional
+    variadic
+    parseArg
+  }
+  class Argument {
+    required
+    variadic
+    parseArg
+  }
+  class Help {
+    formatHelp()
+  }
+  class CommanderError {
+    exitCode
+    code
+  }
+  Command "1" o-- "*" Option
+  Command "1" o-- "*" Argument
+  Command "1" o-- "*" Command : subcommands
+  Command ..> Help : createHelp()
+  Command ..> CommanderError : _exit()
+    </pre>
+    <figcaption>Notice that subcommands are full <code>Command</code>s, so everything on this page applies again at each level. Options are not inherited by children. Use <code>optsWithGlobals()</code> (<code>lib/command.js:1936</code>) to read the parents' values.</figcaption>
+  </figure>
+</section>
+
+<section id="contribute">
+  <h2>How to contribute here</h2>
+
+  <h3>Set up and run</h3>
+  <p>Prerequisite: Node <code>&gt;=22.12.0</code> (<code>package.json</code> <code>engines</code>). CI tests on Node 22, 24 and 26 on Ubuntu, Windows and macOS (<code>.github/workflows/tests.yml</code>). These commands were run in a scratch worktree at <code>ba6d13d</code> on Node 22.22.3.</p>
+  <table>
+    <tr><th>command</th><th>source</th><th>result</th></tr>
+    <tr><td><code>npm ci</code></td><td>CI workflow</td><td>✅ ran: installed, with an <code>npm audit</code> notice about devDependencies</td></tr>
+    <tr><td><code>npm test</code></td><td><code>package.json</code>: <code>node --test &amp;&amp; npm run check:type:ts</code></td><td>✅ ran: 1373 tests, 1372 pass, 0 fail, 1 skipped (~1.7 s), then <code>tsd</code> and <code>tsc</code> passed</td></tr>
+    <tr><td><code>npm run check</code></td><td><code>package.json</code>: type, lint (<code>eslint</code>) and format (<code>prettier --check</code>)</td><td>✅ ran: exit 0, "All matched files use Prettier code style!"</td></tr>
+    <tr><td><code>npm run fix</code></td><td><code>package.json</code>: <code>eslint --fix</code> then <code>prettier --write</code></td><td>⚠️ not run here (it writes files)</td></tr>
+  </table>
+
+  <h3>Test it</h3>
+  <ul>
+    <li>Whole suite: <code>npm test</code>. Before a PR, also run <code>npm run check</code>. <code>CONTRIBUTING.md</code> asks for both.</li>
+    <li>One file: <code>node --test tests/options.choices.test.js</code>. ✅ ran: 5 tests, 5 pass.</li>
+    <li>One test: <code>node --test --test-name-pattern="not in choices" tests/options.choices.test.js</code>. ✅ ran: 1 test, 1 pass.</li>
+    <li>Main-path coverage: <code>tests/command.parse.test.js</code>, <code>tests/command.parseOptions.test.js</code>, <code>tests/command.action.test.js</code>, and <code>tests/command.exitOverride.test.js</code> for error codes and messages.</li>
+  </ul>
+
+  <h3>Conventions that apply here</h3>
+  <ul>
+    <li><b>Open PRs against <code>develop</code></b>, not <code>master</code> (<code>CONTRIBUTING.md</code>, Pull Requests).</li>
+    <li><b>Do not edit <code>CHANGELOG.md</code> or the version.</b> Maintainers do that at release (<code>CONTRIBUTING.md</code>). Put a suggested CHANGELOG line in the PR description instead.</li>
+    <li><b>Update all the documentation a change touches:</b> TypeScript typings, JSDoc in the code, tests, README and <code>examples/</code>. The same list is in <code>CONTRIBUTING.md</code>. It is fine to open the code first and ask before doing the rest.</li>
+    <li><b>No new runtime dependencies.</b> Such PRs are "much less likely to be accepted" (<code>CONTRIBUTING.md</code>).</li>
+    <li><b>Style</b> is enforced by Prettier and ESLint (<code>eslint.config.js</code>, <code>.editorconfig</code>). Run <code>npm run fix</code> rather than formatting by hand.</li>
+    <li><b>JSDoc types are checked.</b> <code>check:type:js</code> runs <code>tsc -p tsconfig.js.json</code> over the JS, so the <code>@param</code>/<code>@return</code> tags must be correct. Helpers that should stay out of the public API are marked <code>@private</code> or <code>@package</code>.</li>
+    <li><b>Test names</b> read as <code>'when X then Y'</code> inside a <code>describe('Class.method()')</code> block (see <code>tests/options.choices.test.js:7</code>).</li>
+  </ul>
+
+  <h3>Recipe: add another <code>Option</code> modifier like <code>.choices()</code> or <code>.env()</code></h3>
+  <ol>
+    <li><b><code>lib/option.js</code></b>: add a field with its default in the constructor (<code>lib/option.js:11</code>). Add a chainable method with JSDoc that sets it and returns <code>this</code>, next to its siblings (<code>lib/option.js:65</code> to <code>lib/option.js:181</code>).</li>
+    <li><b><code>lib/command.js</code></b>: use the field where it takes effect. Value transforms go in <code>handleOptionValue</code> inside <code>addOption</code> (<code>lib/command.js:683</code>). Whole-command checks go next to <code>_checkForMissingMandatoryOptions</code> and <code>_checkForConflictingOptions</code>, which are called at <code>lib/command.js:1598</code>. Report errors through <code>this.error(message, { code: 'commander.&lt;name&gt;' })</code> so <code>exitOverride</code> works.</li>
+    <li><b><code>lib/help.js</code></b>: if users should see the setting, add it to the <code>extraInfo</code> list in <code>optionDescription</code> (<code>lib/help.js:326</code>).</li>
+    <li><b><code>typings/index.d.ts</code></b>: declare the method on <code>class Option</code> (<code>typings/index.d.ts:95</code>), with the same JSDoc. Add <code>expectType</code> lines to <code>typings/index.test-d.ts</code> (see the choices block at <code>typings/index.test-d.ts:719</code>).</li>
+    <li><b><code>tests/options.&lt;feature&gt;.test.js</code></b>: a new file using <code>createTestCommand()</code>. Add an error-code test in <code>tests/command.exitOverride.test.js</code> if you added an error.</li>
+    <li><b>Docs</b>: <code>Readme.md</code> and <code>docs/options-in-depth.md</code>, plus an <code>examples/</code> file if it helps.</li>
+    <li>Run <code>npm test</code> and <code>npm run check</code>, then open the PR against <code>develop</code>.</li>
+  </ol>
+  <p>For an <code>Argument</code> modifier, the same steps apply with <code>lib/argument.js</code>, <code>_processArguments</code> (<code>lib/command.js:1440</code>), <code>argumentDescription</code> in <code>lib/help.js:373</code>, and <code>class Argument</code> at <code>typings/index.d.ts:48</code>.</p>
+
+  <div class="callout gotcha"><span class="label">Watch out</span>
+    <ul>
+      <li><b>Events use <code>name()</code>, storage uses <code>attributeName()</code>.</b> The event for <code>--dry-run</code> is <code>option:dry-run</code>, but the value is stored as <code>dryRun</code> (<code>lib/command.js:674</code>). A negated <code>--no-color</code> stores under <code>color</code>.</li>
+      <li><b><code>parse()</code> can run more than once.</b> Any new per-parse state on <code>Command</code> must be saved and restored in <code>saveStateBeforeParse</code> and <code>restoreStateBeforeParse</code> (<code>lib/command.js:1154</code>), or it leaks between parses.</li>
+      <li><b>Tests that hit an error path without <code>exitOverride()</code></b> call the real <code>process.exit</code> and kill the runner. Use <code>createTestCommand()</code>.</li>
+      <li><b>Check order is visible to users.</b> Moving a check in <code>_parseCommand</code> changes which error people see when there are two problems. Keep "unknown command" ahead of "unknown option" (<code>lib/command.js:1601</code>).</li>
+      <li><b>Typings drift silently from the JS.</b> <code>tsd</code> only checks what <code>index.test-d.ts</code> exercises.</li>
+      <li><b>Executable subcommands</b> (<code>.command('name', 'description')</code> with no action) spawn a separate process (<code>lib/command.js:1215</code>). Behaviour there differs by platform. CI runs on Windows for this reason <em>(inferred)</em>.</li>
+    </ul>
+  </div>
+
+  <h3>Who knows this</h3>
+  <p>John Gee is the most active human committer since 2025 (39 commits on <code>HEAD</code>; the next human has 3). Most other commits are from dependabot.</p>
+</section>
+
+<section id="check-yourself">
+  <h2>Check yourself</h2>
+  <details><summary>A user runs <code>tool --colour=orange</code>. Which function rejects it, and what prefix does the error message get?</summary><p>The <code>--x=y</code> branch of <code>parseOptions</code> (<code>lib/command.js:1851</code>) emits <code>option:colour</code> with <code>'orange'</code>. <code>handleOptionValue</code> calls <code>_callParseArg</code>, the <code>.choices()</code> parseArg throws <code>InvalidArgumentError</code>, and <code>_callParseArg</code> prefixes it with <code>error: option '--colour &lt;shade&gt;' argument 'orange' is invalid.</code>. See code-tour stops 4 to 7.</p></details>
+  <details><summary>Why does the parent program not complain about <code>-d</code> in <code>pizza order large -d</code>?</summary><p>The parent's <code>parseOptions</code> puts the first unknown option and everything after it into <code>unknown</code>, not into an error. <code>_parseCommand</code> finds <code>order</code> in operands and hands <code>unknown</code> to the child before any unknown-option check runs. See the main-flow trace, steps 2 and 3.</p></details>
+  <details><summary>You add a new field to <code>Command</code> that <code>parseOptions</code> writes. What else must you touch so a second <code>parse()</code> works?</summary><p><code>saveStateBeforeParse</code> and <code>restoreStateBeforeParse</code> at <code>lib/command.js:1154</code>. See the Watch out list.</p></details>
+  <details><summary>Your new test fails with the runner exiting instead of an assertion. What did you forget?</summary><p><code>.exitOverride()</code>. Build the command with <code>createTestCommand()</code> from <code>tests/testHelpers.js:12</code> so <code>_exit</code> throws a <code>CommanderError</code> instead of calling <code>process.exit</code>. See code-tour stops 7 and 10.</p></details>
+  <details><summary>You added <code>Option.prototype.foo()</code> and <code>npm test</code> passes. What will the maintainers still ask for?</summary><p>A declaration in <code>typings/index.d.ts</code>, <code>expectType</code> lines in <code>typings/index.test-d.ts</code>, README/docs updates, and <code>npm run check</code> passing. Not a CHANGELOG edit. See the Conventions and Recipe blocks.</p></details>
+
+  <div class="callout try"><span class="label">Starter task (about 45 minutes)</span>
+    <p><b>Cover every spelling of an option in the choices tests.</b> <code>tests/options.choices.test.js</code> only tests <code>--colour red</code> (two words). None of the test files try a <code>.choices()</code> option written as <code>--colour=orange</code>, or as a value glued to a short flag (<code>-corange</code>). Each of these goes through a different branch of <code>parseOptions</code>.</p>
+    <ol>
+      <li>In <code>tests/options.choices.test.js</code>, inside <code>describe('Option.choices()')</code>, add <code>'when option argument in choices using --flag=value then option set'</code> and the matching error case. Use <code>new commander.Option('-c, --colour &lt;shade&gt;').choices(['red', 'blue'])</code> and <code>parse([...], { from: 'user' })</code>.</li>
+      <li>Add the same pair for <code>-cred</code> and <code>-corange</code>. Those take the combo branch at <code>lib/command.js:1831</code>, which emits <code>arg.slice(2)</code>.</li>
+      <li>For the error cases, use <code>createTestCommand()</code> and <code>assert.throws</code> with <code>{ code: 'commander.invalidArgument' }</code>.</li>
+      <li>Done when <code>node --test tests/options.choices.test.js</code> shows 9 passing, and <code>npm run check</code> passes. Open the PR against <code>develop</code> with a one-line CHANGELOG suggestion.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="next">
+  <h2>Read next</h2>
+  <ul>
+    <li><code>docs/parsing-and-hooks.md</code>: the official account of the parse order and when <code>preSubcommand</code>, <code>preAction</code> and <code>postAction</code> fire.</li>
+    <li><code>docs/options-in-depth.md</code>: edge cases of optional values, negation and variadic options that the parser branches above implement.</li>
+    <li><code>lib/option.js:268</code> <code>DualOptions</code>: how <code>--x</code> and <code>--no-x</code> on the same key decide the value. This is the newest subtle logic (<code>63eed4a</code>).</li>
+    <li><code>docs/help-in-depth.md</code>: what you can override in <code>Help</code>, before you change <code>lib/help.js</code>.</li>
+  </ul>
+</section>
+</main>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'neutral', flowchart: { htmlLabels: true, curve: 'basis' } });
+try { await mermaid.run({ querySelector: '.mermaid' }); }
+catch (e) { console.error('mermaid', e); }
+document.body.dataset.mermaid = 'done';
+</script>
+<script>
+document.querySelectorAll('pre code[class*="language-"]').forEach(el => { try { hljs.highlightElement(el); } catch (_) {} });
+const toc = document.querySelector('nav.toc ol');
+const sections = [...document.querySelectorAll('main section[id]')];
+sections.forEach(s => {
+  const h = s.querySelector('h2'); if (!h) return;
+  const li = document.createElement('li'); const a = document.createElement('a');
+  a.href = '#' + s.id; a.textContent = h.textContent; li.append(a); toc.append(li);
+});
+const links = new Map([...toc.querySelectorAll('a')].map(a => [a.hash.slice(1), a]));
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); links.get(e.target.id)?.classList.add('active'); }
+}), { rootMargin: '0px 0px -70% 0px' });
+sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>

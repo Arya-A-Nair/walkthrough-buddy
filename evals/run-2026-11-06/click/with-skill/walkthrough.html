@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Click Parameter spec</title>
+<meta name="walkthrough:head" content="2247b35ea1c47c727d7a06e51fa280e12a863ff6">
+<meta name="walkthrough:base" content="06b2a678741131fd577ce170e23e5ca0aeba0309">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --surface-2: #f3f1ec; --ink: #1d1c1a; --muted: #6b675f;
+  --line: #e4e0d8; --accent: #2f5fd0; --new: #1f8a4c; --changed: #b26b00; --gone: #b4232c;
+  --eli5: #7b4bc4; --why: #2f5fd0; --gotcha: #b4232c; --try: #1f8a4c;
+  --radius: 10px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131416; --surface: #1b1d20; --surface-2: #23262a; --ink: #e9e7e2; --muted: #a19d95;
+    --line: #33363b; --accent: #7fa2ff; --new: #4cc98a; --changed: #f0a73a; --gone: #ff7b84;
+    --eli5: #b994ff; --why: #7fa2ff; --gotcha: #ff7b84; --try: #4cc98a;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--sans); }
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 48px; max-width: 1180px; margin: 0 auto; padding: 32px 24px 96px; }
+nav.toc { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto; font-size: 14px; }
+nav.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+nav.toc li { counter-increment: s; margin: 2px 0; }
+nav.toc a { display: block; padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+nav.toc a::before { content: counter(s, decimal-leading-zero) "  "; font-family: var(--mono); font-size: 12px; opacity: .7; }
+nav.toc a:hover, nav.toc a.active { background: var(--surface-2); color: var(--ink); }
+main { min-width: 0; max-width: 780px; }
+header.hero { padding-bottom: 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.kicker { font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 34px; line-height: 1.2; margin: 10px 0 12px; }
+.answer { font-size: 20px; line-height: 1.5; margin: 0 0 16px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+.meta code { font-size: 12px; }
+section { padding-top: 40px; }
+h2 { font-size: 24px; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+p, li { max-width: 72ch; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+pre code { background: none; padding: 0; }
+.callout { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin: 16px 0; box-shadow: 0 0 0 1px var(--line) inset; }
+.callout > .label { font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.callout.eli5 { border-color: var(--eli5); } .callout.eli5 > .label { color: var(--eli5); }
+.callout.why { border-color: var(--why); } .callout.why > .label { color: var(--why); }
+.callout.gotcha { border-color: var(--gotcha); } .callout.gotcha > .label { color: var(--gotcha); }
+.callout.try { border-color: var(--try); } .callout.try > .label { color: var(--try); }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+figure { margin: 20px 0; }
+figure.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; overflow-x: auto; }
+figure.diagram figcaption, figure.code figcaption { font-size: 13px; color: var(--muted); }
+figure.diagram figcaption { margin-top: 10px; }
+.mermaid { display: flex; justify-content: center; min-width: min-content; }
+figure.code { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+figure.code figcaption { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-family: var(--mono); font-size: 12px; overflow-x: auto; white-space: nowrap; }
+figure.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; }
+figure.code pre code.hljs { background: transparent; padding: 0; }
+.tag { font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 3px 6px; border-radius: 4px; border: 1px solid currentColor; }
+.tag.new { color: var(--new); } .tag.changed { color: var(--changed); } .tag.removed { color: var(--gone); } .tag.context { color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 16px 0; display: block; overflow-x: auto; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 700 11px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 6px 18px; }
+dl.glossary dt { font-weight: 600; } dl.glossary dd { margin: 0; color: var(--ink); }
+ol.trace { padding-left: 0; list-style: none; counter-reset: t; }
+ol.trace > li { counter-increment: t; position: relative; padding: 0 0 14px 40px; border-left: 2px solid var(--line); margin-left: 12px; }
+ol.trace > li::before { content: counter(t); position: absolute; left: -13px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--bg); font: 700 12px/24px var(--mono); text-align: center; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin: 10px 0; }
+details summary { cursor: pointer; font-weight: 600; }
+.checklist li { list-style: "☐  "; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; gap: 0; padding: 20px 16px 64px; }
+  nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  h1 { font-size: 28px; }
+  dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: 8px; }
+}
+@media print { nav.toc { display: none; } .layout { display: block; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Contents"><ol></ol></nav>
+<main>
+<header class="hero">
+  <div class="kicker">Pull request walkthrough</div>
+  <h1>Parameter.spec: naming a parameter the way the user types it</h1>
+  <p class="answer">Click now names options in errors, warnings and help the way users type them: <code>--my-option</code>, not <code>my_option</code>.</p>
+  <div class="meta">
+    <span>pallets/click #3877</span><span>at <code>2247b35</code></span><span>7 files, +266/−26</span><span>~12 min read</span>
+  </div>
+</header>
+
+<section id="big-picture">
+  <h2>The big picture</h2>
+  <p>Click is a library for building command-line programs. You declare options and arguments with decorators, and Click parses <code>sys.argv</code>, prints <code>--help</code>, and reports mistakes. Before this PR, some of those reports named an option by its Python name: <code>The option 'my_option' is deprecated.</code> The user never typed <code>my_option</code>. They typed <code>--my-option</code>.</p>
+  <p>The PR gives every parameter one property, <code>Parameter.spec</code>, that returns the user-facing spelling. It moves <code>get_help_spec</code> up from <code>Option</code> to <code>Parameter</code> so arguments have it too. It deprecates the old property <code>human_readable_name</code>, which returned the wrong string for options. It targets Click 8.6.0 (<code>CHANGES.md:9</code>).</p>
+  <p>Who notices: end users reading error text, developers whose tests assert on that text, and libraries like <code>cloup</code> that subclass <code>Parameter</code> (the author says so in the PR thread).</p>
+  <div class="callout eli5"><span class="label">Like you're five</span>
+    <p>Think of a coffee shop. The customer writes an order slip (the <b>decls</b>: <code>'-g', '--gluten-free/--no-gluten-free'</code>). The barista turns it into a ticket number for the kitchen (the <b>name</b>: <code>gluten_free</code>). The menu board on the wall shows the drink as the customer orders it (the <b>spec</b>: <code>--gluten-free</code>). Before this PR, when a drink was discontinued, the barista shouted the kitchen ticket number at the customer. Now the barista reads from the menu board.</p>
+    <p><em>Where the analogy breaks:</em> an argument has no flag to order by, so its "menu board" entry is just its name in capitals (<code>RECIPE</code>).</p>
+  </div>
+  <figure class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  dev(["Developer: @click.option(...)"]) --> parse["_parse_decls()"]
+  parse --> name["name: gluten_free"]
+  parse --> opts["opts / secondary_opts"]
+  opts --> spec["spec: --gluten-free"]
+  hrn["human_readable_name (deprecated)"] --> spec
+  spec --> warn["deprecation message"]
+  spec --> hint["get_error_hint()"]
+  hint --> exc["exceptions.py: BadParameter"]
+  opts --> helpspec["get_help_spec()"]
+  helpspec --> help["--help left column"]
+  name --> cb["callback(gluten_free=...)"]
+  classDef new fill:#e3f5ea,stroke:#1f8a4c,color:#0f3d22
+  classDef changed fill:#fdf0dc,stroke:#b26b00,color:#4a2c00
+  class spec,helpspec new
+  class hrn,warn,hint changed
+    </pre>
+    <figcaption>Notice the split: <code>name</code> only feeds the Python callback, and everything the user reads now flows through <code>spec</code> or <code>get_help_spec()</code>.</figcaption>
+  </figure>
+</section>
+
+<section id="before-after">
+  <h2>Before and after</h2>
+  <p>The PR author lists three strings for three audiences (PR #3877 description):</p>
+  <table>
+    <tr><th></th><th><code>@click.argument('recipe')</code></th><th><code>@click.option('-g', '--gluten-free/--no-gluten-free')</code></th></tr>
+    <tr><td><code>decls</code></td><td><code>('recipe',)</code></td><td><code>('-g', '--gluten-free/--no-gluten-free')</code></td></tr>
+    <tr><td><code>spec</code></td><td><code>RECIPE</code></td><td><code>--gluten-free</code></td></tr>
+    <tr><td><code>name</code></td><td><code>recipe</code></td><td><code>gluten_free</code></td></tr>
+    <tr><td><code>opts</code></td><td><code>['recipe']</code></td><td><code>['-g', '--gluten-free']</code></td></tr>
+    <tr><td><code>secondary_opts</code></td><td><code>[]</code></td><td><code>['--no-gluten-free']</code></td></tr>
+  </table>
+  <p>The same table now lives in the docs at <code>docs/parameters.md:68</code>.</p>
+  <ul>
+    <li><b>Before:</b> <code>Parameter.human_readable_name</code> returned <code>self.name</code> for options and the metavar for arguments (base <code>src/click/core.py:2520</code>, <code>src/click/core.py:3838</code> at base). A deprecated option printed <code>The option 'my_option' is deprecated.</code></li>
+    <li><b>After:</b> <code>Parameter.spec</code> returns the longest-prefix declaration for options and the metavar for arguments. The message reads <code>The option '--my-option' is deprecated.</code> I ran this on the merge commit and got exactly that line (see the trace below).</li>
+    <li><b>Why:</b> this follows PR #3821, which added <code>Option.get_help_spec</code>. While discussing it, the author "realized we had 3 aspects of a parameter for 3 different audiences" and harmonised the vocabulary (PR description). He chose not to rename <code>name</code> to <code>id</code>, to "keep this proposal reasonable".</li>
+  </ul>
+  <figure class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  subgraph Before
+    o1["Option --my-option"] --> h1["human_readable_name"]
+    h1 --> n1["my_option"]
+  end
+  subgraph After
+    o2["Option --my-option"] --> s2["spec"]
+    s2 --> n2["--my-option"]
+    h2["human_readable_name"] -. "warns, then" .-> s2
+  end
+  classDef new fill:#e3f5ea,stroke:#1f8a4c,color:#0f3d22
+  classDef changed fill:#fdf0dc,stroke:#b26b00,color:#4a2c00
+  class s2 new
+  class h2 changed
+    </pre>
+    <figcaption>The old property still works, but it now emits a <code>DeprecationWarning</code> and returns the new value. Code that relied on it returning <code>my_option</code> for options gets <code>--my-option</code>.</figcaption>
+  </figure>
+  <p>The review thread is short: one comment from the author pointing a <code>cloup</code> maintainer at the change. There was no rework after review. The PR merged as a squash of one commit (<code>9f0bcdf</code> into <code>2247b35</code>).</p>
+</section>
+
+<section id="glossary">
+  <h2>Glossary</h2>
+  <dl class="glossary">
+    <dt>decls</dt><dd>The strings a developer passes to <code>@click.option</code> or <code>@click.argument</code>, stored as <code>param_decls</code>. Parsed in <code>src/click/core.py:3449</code> (options) and <code>src/click/core.py:3963</code> (arguments).</dd>
+    <dt><code>name</code></dt><dd>The internal id and the keyword the callback receives, like <code>gluten_free</code>. Documented at <code>src/click/core.py:2352</code>.</dd>
+    <dt><code>opts</code></dt><dd>Every spelling that sets the parameter, like <code>['-g', '--gluten-free']</code>. For an argument it holds the single declaration. <code>src/click/core.py:2359</code>.</dd>
+    <dt><code>secondary_opts</code></dt><dd>The spellings that set a boolean flag to <code>False</code>, the right side of <code>--color/--no-color</code>. <code>src/click/core.py:2370</code>.</dd>
+    <dt><code>spec</code></dt><dd>New. The one spelling users read and type: <code>--times</code> for an option, <code>FILENAME</code> for an argument. <code>src/click/core.py:2570</code>.</dd>
+    <dt><code>get_help_spec(ctx)</code></dt><dd>The longer form shown in the left column of <code>--help</code>, like <code>-c, --config TEXT</code> or <code>[FILENAME]...</code>. Now on <code>Parameter</code> at <code>src/click/core.py:2605</code>.</dd>
+    <dt>metavar</dt><dd>The placeholder shown for a value, like <code>TEXT</code> or <code>FILENAME</code>. <code>Argument.make_metavar</code> adds <code>[...]</code> and <code>...</code> markers for optional and repeated values.</dd>
+    <dt>prefix</dt><dd>The leading <code>-</code>, <code>--</code> or <code>/</code> of a flag, split off by <code>_split_opt</code> in <code>src/click/parser.py:111</code>.</dd>
+    <dt><code>human_readable_name</code></dt><dd>The old property. Deprecated in 8.6.0, removed in 9.0. <code>src/click/core.py:2586</code>.</dd>
+    <dt>error hint</dt><dd>The quoted parameter text in an error like <code>Missing argument 'RECIPE'.</code> Built by <code>get_error_hint</code> (<code>src/click/core.py:3023</code>) and read by <code>src/click/exceptions.py:150</code>.</dd>
+  </dl>
+</section>
+
+<section id="main-flow">
+  <h2>The main path: a deprecated option is used</h2>
+  <figure class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as User shell
+  participant C as Command.parse_args
+  participant P as Parameter.handle_parse_result
+  participant S as Option.spec
+  participant E as echo to stderr
+  U->>C: cli --my-option hello brioche
+  C->>P: for each param, handle_parse_result(ctx, opts, args)
+  P->>P: consume_value returns hello, source COMMANDLINE
+  P->>S: deprecated and source below DEFAULT_MAP, read self.spec
+  S-->>P: --my-option, the longest-prefix decl
+  P->>E: DeprecationWarning - The option '--my-option' is deprecated.
+  P->>P: process_value, then store in ctx.params
+    </pre>
+    <figcaption>The only line this PR changes on the path is step 4: the message reads <code>self.spec</code> where it read <code>self.human_readable_name</code>.</figcaption>
+  </figure>
+  <h3>Worked example</h3>
+  <p>Input taken from <code>tests/test_options.py:131</code>, run on the merge commit with an added argument <code>recipe</code>:</p>
+  <ol class="trace">
+    <li><code>@click.option("--my-option", deprecated=True, default="d")</code> builds an <code>Option</code>. <code>_parse_decls</code> sets <code>opts = ['--my-option']</code> and derives <code>name = 'my_option'</code> (<code>src/click/core.py:3486</code>).</li>
+    <li>The user runs <code>cli --my-option hello brioche</code>. <code>Command.parse_args</code> calls <code>param.handle_parse_result</code> for each parameter (<code>src/click/core.py:1404</code>).</li>
+    <li><code>consume_value</code> returns <code>"hello"</code> with source <code>COMMANDLINE</code>, which is below <code>DEFAULT_MAP</code>, so the deprecation branch runs (<code>src/click/core.py:2960</code>).</li>
+    <li><code>self.spec</code> returns <code>'--my-option'</code>: the only entry in <code>opts</code>.</li>
+    <li>stderr gets <code>DeprecationWarning: The option '--my-option' is deprecated.</code>, then stdout gets <code>brioche hello</code>. Both lines are the real output I captured.</li>
+  </ol>
+  <h3>Where it can fail</h3>
+  <ul>
+    <li><b>Missing argument.</b> Run <code>cli</code> with no args. <code>process_value</code> raises <code>MissingParameter</code> (<code>src/click/core.py:2827</code>), whose message asks <code>Argument.get_error_hint(ctx)</code>. That now calls <code>get_help_spec(ctx)</code> and prints <code>Error: Missing argument 'RECIPE'.</code> (captured).</li>
+    <li><b>Required and deprecated at once.</b> <code>Parameter.__init__</code> raises <code>ValueError</code> naming the parameter by <code>spec</code> (<code>src/click/core.py:2485</code>).</li>
+    <li><b>Subclass overrides the old property.</b> The class statement itself emits a <code>DeprecationWarning</code> (<code>src/click/core.py:2392</code>). Click's test config turns every warning into an error (<code>pyproject.toml:86</code>), so this fails tests that define such a subclass.</li>
+  </ul>
+</section>
+
+<section id="code-tour">
+  <h2>Code tour</h2>
+
+  <h3>1. <code>Parameter.spec</code>: pick the longest prefix</h3>
+  <p><b>What it does:</b> returns the declaration with the longest prefix, so <code>--times</code> beats <code>-t</code>. A parameter with no <code>opts</code> falls back to <code>name</code>.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="2569-2583">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L2569-L2583">src/click/core.py:2569-2583</a><span class="tag new">new</span></figcaption>
+  <pre><code class="language-python">    @property
+    def spec(self) -&gt; str:
+        """Returns how the user spells this parameter on the command line.
+
+        This is the declaration with the longest prefix, so an option declared
+        as ``"-t", "--times"`` returns ``--times``. Click derives :attr:`name`
+        from that same declaration, unless the developer passed an explicit
+        name. A parameter without declarations returns its :attr:`name`.
+
+        .. versionadded:: 8.6.0
+        """
+        if not self.opts:
+            return self.name
+
+        return max(self.opts, key=lambda opt: len(_split_opt(opt)[0]))</code></pre>
+</figure>
+  <div class="callout why"><span class="label">Why it's built this way</span><p>It mirrors how <code>name</code> is chosen, below, so spec and name come from the same declaration. <code>max()</code> returns the first of equal-length candidates, and the name sort is stable, so ties also agree: <code>['-t', '--times', '--repeat']</code> gives <code>--times</code> and <code>times</code>. <code>test_spec</code> asserts that link for every case.</p></div>
+
+  <h3>2. Where <code>name</code> comes from (unchanged)</h3>
+  <p><b>What it does:</b> sorts candidate declarations by prefix length and turns the winner into a Python identifier.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="3482-3486">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L3482-L3486">src/click/core.py:3482-3486</a><span class="tag context">context</span></figcaption>
+  <pre><code class="language-python">                    possible_names.append(_split_opt(decl))
+                    opts.append(decl)
+
+        if name is None and possible_names:
+            possible_names.sort(key=lambda x: -len(x[0]))  # group long options first</code></pre>
+</figure>
+  <div class="callout why"><span class="label">Why it matters</span><p>If you ever change this rule, <code>spec</code> must change with it, or error messages will name a different flag than the one <code>name</code> came from. The one exception is an explicit name: <code>Option(["--times", "repeat_count"])</code> has <code>name = "repeat_count"</code> and <code>spec = "--times"</code> (<code>tests/test_options.py:123</code>).</p></div>
+
+  <h3>3. <code>Argument.spec</code>: an argument has no flag</h3>
+  <p><b>What it does:</b> returns the metavar if the developer gave one, else the name in capitals. This is the body the old <code>Argument.human_readable_name</code> had. Only the name changed.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="3931-3942">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L3931-L3942">src/click/core.py:3931-3942</a><span class="tag changed">changed</span></figcaption>
+  <pre><code class="language-python">    @property
+    def spec(self) -&gt; str:
+        """Returns the argument's metavar, which is how the user reads it in
+        ``--help``. An argument has no flag to spell, so this is the
+        :attr:`metavar` if one was given, and the uppercased :attr:`name`
+        otherwise.
+
+        .. versionadded:: 8.6.0
+        """
+        if self.metavar is not None:
+            return self.metavar
+        return self.name.upper()</code></pre>
+</figure>
+
+  <h3>4. <code>get_help_spec</code>: the longer help-page form</h3>
+  <p><b>What it does:</b> <code>Parameter.get_help_spec</code> returns <code>spec</code>. <code>Option</code> overrides it to join every spelling plus the metavar. <code>Argument</code> overrides it to return <code>make_metavar(ctx)</code>, which adds <code>[...]</code> for optional and <code>...</code> for repeated values.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="3987-4006">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L3987-L4006">src/click/core.py:3987-4006</a><span class="tag new">new</span></figcaption>
+  <pre><code class="language-python">    def get_help_spec(self, ctx: Context) -&gt; str:
+        """Returns the left column of the argument's help record: its metavar,
+        like ``FILENAME`` or ``[FILENAME]``.
+
+        .. versionadded:: 8.6.0
+        """
+        return self.make_metavar(ctx)
+    …
+        return self.get_help_spec(ctx), self.help or ""</code></pre>
+</figure>
+  <figure class="code" data-file="src/click/core.py" data-lines="3558-3587">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L3558-L3587">src/click/core.py:3558-3587</a><span class="tag context">context</span></figcaption>
+  <pre><code class="language-python">    def get_help_spec(self, ctx: Context) -&gt; str:
+    …
+
+        rv = [_write_opts(self.opts)]
+
+        if self.secondary_opts:
+            rv.append(_write_opts(self.secondary_opts))
+
+        return ("; " if any_prefix_is_slash else " / ").join(rv)</code></pre>
+</figure>
+  <div class="callout why"><span class="label">Why two methods</span><p><code>spec</code> needs no context and names the parameter. <code>get_help_spec(ctx)</code> needs a context because the metavar can depend on it, and it decorates the value. The tests pin the difference: <code>nargs=-1</code> gives spec <code>FILENAME</code> but help spec <code>[FILENAME]...</code> (<code>tests/test_arguments.py:874</code>). Unlike <code>get_help_record</code>, it also works for hidden options (docstring at <code>src/click/core.py:2614</code>).</p></div>
+
+  <h3>5. Error hints switch to the new names</h3>
+  <p><b>What it does:</b> the text inside <code>Missing argument '...'</code> or <code>Invalid value for '...'</code>.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="3899-3902" data-ref="base">
+    <figcaption><a href="https://github.com/pallets/click/blob/06b2a678741131fd577ce170e23e5ca0aeba0309/src/click/core.py#L3899-L3902">src/click/core.py:3899-3902 (before)</a><span class="tag removed">removed</span></figcaption>
+    <pre><code class="language-python">    def get_error_hint(self, ctx: Context | None) -&gt; str:
+        if ctx is not None:
+            return f"'{self.make_metavar(ctx)}'"
+        return f"'{self.human_readable_name}'"</code></pre>
+  </figure>
+  <figure class="code" data-file="src/click/core.py" data-lines="4008-4011">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L4008-L4011">src/click/core.py:4008-4011</a><span class="tag changed">changed</span></figcaption>
+  <pre><code class="language-python">    def get_error_hint(self, ctx: Context | None) -&gt; str:
+        if ctx is not None:
+            return f"'{self.get_help_spec(ctx)}'"
+        return f"'{self.spec}'"</code></pre>
+</figure>
+  <p>The output is the same string as before for arguments. The point is that nothing inside Click reads <code>human_readable_name</code> any more, so the deprecated property can be deleted in 9.0 without touching callers. The base <code>Parameter.get_error_hint</code> still prefers <code>opts</code> and only falls back to <code>spec</code> (<code>src/click/core.py:3030</code>).</p>
+
+  <h3>6. The deprecation message</h3>
+  <p><b>What it does:</b> the user-visible change in this PR.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="2960-2972">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L2960-L2972">src/click/core.py:2960-2972</a><span class="tag changed">changed</span></figcaption>
+  <pre><code class="language-python">            if (
+                self.deprecated
+                and value is not UNSET
+                and source &lt; ParameterSource.DEFAULT_MAP
+            ):
+                message = _(
+                    "DeprecationWarning: The {param_type} {name!r} is deprecated."
+                    "{extra_message}"
+                ).format(
+                    param_type=self.param_type_name,
+                    name=self.spec,
+                    extra_message=_format_deprecated_suffix(self.deprecated),
+                )</code></pre>
+</figure>
+
+  <h3>7. The old property becomes an alias that warns</h3>
+  <p><b>What it does:</b> keeps <code>human_readable_name</code> working until 9.0, warns on every read, and returns <code>spec</code>.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="2585-2603">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L2585-L2603">src/click/core.py:2585-2603</a><span class="tag changed">changed</span></figcaption>
+  <pre><code class="language-python">    @property
+    def human_readable_name(self) -&gt; str:
+        """Returns how the user spells this parameter on the command line.
+    …
+        import warnings
+
+        warnings.warn(
+            "'human_readable_name' is deprecated and will be removed in Click"
+            " 9.0. Use 'spec' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.spec</code></pre>
+</figure>
+  <div class="callout why"><span class="label">Why <code>stacklevel=2</code> here</span><p>A property read is one frame from the caller, so a fixed level points at the caller's line. <code>warnings</code> is imported inside the function, which is how the rest of <code>core.py</code> does it (for example <code>src/click/core.py:2396</code>) <em>(inferred: keeps import time down)</em>.</p></div>
+
+  <h3>8. Catching subclasses that override the old property</h3>
+  <p><b>What it does:</b> at class-definition time, warns if a subclass defines <code>human_readable_name</code>. Click no longer calls it, so such an override would silently stop working.</p>
+  <figure class="code" data-file="src/click/core.py" data-lines="2392-2404">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L2392-L2404">src/click/core.py:2392-2404</a><span class="tag new">new</span></figcaption>
+  <pre><code class="language-python">    def __init_subclass__(cls, **kwargs: t.Any) -&gt; None:
+        super().__init_subclass__(**kwargs)
+
+        if "human_readable_name" in cls.__dict__:
+            import warnings
+
+            warnings.warn(
+                f"{cls.__name__} overrides 'human_readable_name'. Click no"
+                " longer reads that property. Override 'spec' instead. Click"
+                " will remove 'human_readable_name' in 9.0.",
+                DeprecationWarning,
+                stacklevel=_outside_click_stacklevel(skip=("abc",)),
+            )</code></pre>
+</figure>
+  <figure class="code" data-file="src/click/core.py" data-lines="108-127">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/src/click/core.py#L108-L127">src/click/core.py:108-127</a><span class="tag changed">changed</span></figcaption>
+  <pre><code class="language-python">def _outside_click_stacklevel(skip: cabc.Container[str] = ()) -&gt; int:
+    …
+
+    while frame is not None:
+        module = frame.f_globals.get("__name__", "")
+
+        if module != "click" and not module.startswith("click.") and module not in skip:
+            return level
+
+        frame = frame.f_back
+        level += 1</code></pre>
+</figure>
+  <div class="callout eli5"><span class="label">Like you're five</span><p>A warning has to point at a line of the user's code. <code>_outside_click_stacklevel</code> walks up the call stack, skipping Click's own frames, until it finds the user. The new <code>skip</code> argument adds <code>abc</code> to the "not the user" list, because <code>Parameter</code> is an <code>ABC</code> and Python's <code>abc</code> module sits between the <code>class</code> statement and <code>__init_subclass__</code>.</p></div>
+  <div class="callout why"><span class="label">Why at class time</span><p>A read-time warning would never fire, because Click itself no longer reads the property. Only the class definition shows the override (<code>docs/upgrade-guides.md:19</code>).</p></div>
+
+  <h3>9. The test that pins the rule</h3>
+  <figure class="code" data-file="tests/test_options.py" data-lines="102-120">
+  <figcaption><a href="https://github.com/pallets/click/blob/2247b35ea1c47c727d7a06e51fa280e12a863ff6/tests/test_options.py#L102-L120">tests/test_options.py:102-120</a><span class="tag new">new</span></figcaption>
+  <pre><code class="language-python">@pytest.mark.parametrize(
+    ("param_decls", "expected_spec", "expected_name"),
+    [
+        (["-t", "--times"], "--times", "times"),
+        (["--times", "-t"], "--times", "times"),
+        (["-t"], "-t", "t"),
+        (["-t", "--times", "--repeat"], "--times", "times"),
+        (["--color/--no-color"], "--color", "color"),
+        (["/debug;/no-debug"], "/debug", "debug"),
+    ],
+)
+def test_spec(param_decls, expected_spec, expected_name):
+    """The spec is the declaration the name was derived from, so the longest
+    prefix wins over declaration order.
+    """
+    opt = click.Option(param_decls)
+    assert opt.spec == expected_spec
+    assert opt.name == expected_name
+    assert _split_opt(opt.spec)[1].replace("-", "_").lower() == opt.name</code></pre>
+</figure>
+
+  <h3>Reading order</h3>
+  <table>
+    <tr><th>file</th><th>what it's for</th><th>read it when</th></tr>
+    <tr><td><code>docs/parameters.md</code></td><td>The decls / spec / name vocabulary, with the example</td><td>First, before any code</td></tr>
+    <tr><td><code>src/click/core.py</code> (class <code>Parameter</code>, from line 2241)</td><td><code>spec</code>, <code>get_help_spec</code>, the deprecation alias</td><td>Changing what any parameter is called in output</td></tr>
+    <tr><td><code>src/click/core.py</code> (class <code>Option</code>, from line 3057)</td><td><code>_parse_decls</code>, the help-spec override</td><td>Changing flag parsing or help layout</td></tr>
+    <tr><td><code>src/click/core.py</code> (class <code>Argument</code>, from line 3894)</td><td>Metavar-based spec and hints</td><td>Changing positional-argument output</td></tr>
+    <tr><td><code>src/click/exceptions.py</code></td><td>Where error hints get used</td><td>Changing error wording</td></tr>
+    <tr><td><code>tests/test_options.py</code>, <code>tests/test_arguments.py</code>, <code>tests/test_deprecations.py</code></td><td>The tests for all of the above</td><td>Before you open a PR</td></tr>
+  </table>
+</section>
+
+<section id="data-model">
+  <h2>Who overrides what</h2>
+  <figure class="diagram">
+    <pre class="mermaid">
+classDiagram
+  class Parameter {
+    +name: str
+    +opts: list
+    +secondary_opts: list
+    +spec() str
+    +get_help_spec(ctx) str
+    +get_error_hint(ctx) str
+    +human_readable_name() str
+  }
+  class Option {
+    +get_help_spec(ctx) str
+    +get_error_hint(ctx) str
+  }
+  class Argument {
+    +spec() str
+    +get_help_spec(ctx) str
+    +get_error_hint(ctx) str
+  }
+  Parameter <|-- Option
+  Parameter <|-- Argument
+    </pre>
+    <figcaption>Option inherits <code>spec</code> from <code>Parameter</code>; only Argument overrides it. Both override <code>get_help_spec</code>. Nobody should override <code>human_readable_name</code> any more.</figcaption>
+  </figure>
+</section>
+
+<section id="contribute">
+  <h2>How to contribute here</h2>
+  <h3>Set up and run</h3>
+  <p>Click's own docs defer setup to the Pallets guide (<code>docs/contributing.md:3</code>). CI runs everything through <code>uv</code> and <code>tox</code> (<code>.github/workflows/tests.yaml:39</code>). Python 3.10 or later (<code>pyproject.toml:16</code>).</p>
+  <ol>
+    <li>⚠️ not run here: <code>uv run --locked --no-default-groups --group dev tox run</code>, the CI command. Or <code>tox run -e py3.13</code> for one interpreter.</li>
+    <li>✅ ran: a plain venv with <code>pip install -e . pytest</code>. This is the fastest path to a green run and is all you need for this area.</li>
+  </ol>
+  <h3>Test it</h3>
+  <ul>
+    <li>✅ ran: <code>python -m pytest tests/test_options.py tests/test_arguments.py tests/test_deprecations.py</code> gave <code>971 passed in 0.62s</code>.</li>
+    <li>✅ ran: <code>python -m pytest tests/test_options.py -k test_spec</code>, the main-path test (<code>tests/test_options.py:113</code>), gave <code>7 passed</code>.</li>
+    <li>✅ ran: <code>python -m pytest</code>, the whole suite, gave <code>2269 passed, 25 skipped, 1 xfailed in 3.58s</code>. Stress tests are deselected by default (<code>pyproject.toml:91</code>).</li>
+    <li>⚠️ not run here: <code>tox r -e typing</code> (mypy and pyright), <code>tox r -e style</code> (pre-commit, including ruff), <code>tox r -e docs</code> (Sphinx with <code>-W</code>, so a broken <code>{attr}</code> role fails the build).</li>
+  </ul>
+  <p>Tests ran against the clone at <code>ac0e297</code>, two commits after the merge. <code>src/click/core.py</code> and the three test files are identical at both commits.</p>
+  <h3>Conventions that apply here</h3>
+  <ul>
+    <li>Warnings are errors in tests (<code>pyproject.toml:86</code>). Any new <code>DeprecationWarning</code> needs a <code>pytest.warns</code> in the test that triggers it.</li>
+    <li>No ternaries: coverage cannot measure both branches (<code>docs/contributing.md:35</code>). Note how <code>Argument.spec</code> uses <code>if</code> and two returns. Older code such as <code>Option.get_help_spec</code> (stop 4) still has a ternary; do not copy it into new code.</li>
+    <li>Wrap Markdown at 80 characters (<code>docs/contributing.md:45</code>).</li>
+    <li>Every change gets a <code>CHANGES.md</code> entry with <code>{pr}`NNNN`</code>, plus <code>.. versionadded::</code> or <code>.. versionchanged::</code> in the docstring (<code>.github/pull_request_template.md:23</code>).</li>
+    <li>Deprecations also get a bullet in <code>docs/upgrade-guides.md</code> with the migration path (<code>docs/upgrade-guides.md:19</code>).</li>
+  </ul>
+  <h3>Recipe: change what users see as a parameter's name</h3>
+  <ol>
+    <li>Decide whether you need the short form (<code>spec</code>, no context) or the decorated help form (<code>get_help_spec(ctx)</code>). Messages naming a parameter use <code>spec</code>. The help column uses <code>get_help_spec</code>.</li>
+    <li>For all parameters, edit <code>Parameter.spec</code> at <code>src/click/core.py:2570</code>. For arguments only, edit <code>Argument.spec</code> at <code>src/click/core.py:3932</code>.</li>
+    <li>If <code>name</code> derivation changes too, keep <code>Option._parse_decls</code> (<code>src/click/core.py:3484</code>) and <code>Parameter.spec</code> choosing the same declaration.</li>
+    <li>Add a case to <code>test_spec</code> (<code>tests/test_options.py:102</code>) or <code>test_spec_and_help_spec</code> (<code>tests/test_arguments.py:874</code>).</li>
+    <li>If output wording changes, grep tests for the old string. <code>test_deprecated_warning</code> asserts on it (<code>tests/test_options.py:146</code>).</li>
+    <li>Add a <code>CHANGES.md</code> bullet under Unreleased and a docstring <code>versionchanged</code>.</li>
+  </ol>
+  <div class="callout gotcha"><span class="label">Watch out</span>
+    <ul>
+      <li>Do not call <code>human_readable_name</code> from Click code. It warns, and with <code>filterwarnings = error</code> every test that reaches it fails.</li>
+      <li><code>name</code> is not for users. It is the callback keyword and the source of auto env var names (<code>src/click/core.py:3626</code>), and <code>__repr__</code> still uses it (<code>src/click/core.py:2525</code>). Changing it breaks callbacks and env vars.</li>
+      <li><code>Parameter.get_error_hint</code> lists all <code>opts</code> (<code>'-t' / '--times'</code>), not just <code>spec</code>. Only arguments, and options without <code>opts</code>, fall back to <code>spec</code>.</li>
+      <li>An option declared only with a false-side flag has empty <code>opts</code>, so <code>spec</code> falls back to the internal name. I checked: <code>Option(["shout", " /--no-shout"], is_flag=True).spec == "shout"</code>.</li>
+      <li>The <code>skip=("abc",)</code> in <code>__init_subclass__</code> is load-bearing. Without it the warning points inside the <code>abc</code> module, not at the user's <code>class</code> line.</li>
+    </ul>
+  </div>
+  <h3>Who knows this</h3>
+  <p>Kevin Deldycke (PR author, most commits to <code>src/click/core.py</code> since mid-2025) and Rowlando13 (merged it).</p>
+</section>
+
+<section id="check-yourself">
+  <h2>Check yourself</h2>
+  <details><summary>An option is declared <code>"-v", "--verbose"</code> and is deprecated. What does the warning name it, and which line decides that?</summary><p><code>'--verbose'</code>. <code>Parameter.spec</code> picks the longest prefix with <code>max()</code> (code tour stop 1), and the warning formats <code>self.spec</code> (stop 6).</p></details>
+  <details><summary>You want <code>--help</code> to show arguments differently. Which method do you change, and which test fails first?</summary><p><code>Argument.get_help_spec</code> (stop 4), which <code>get_help_record</code> calls. <code>test_spec_and_help_spec</code> and <code>test_help_spec_matches_help_record</code> in <code>tests/test_arguments.py</code> pin it.</p></details>
+  <details><summary>A plugin subclasses <code>click.Option</code> and overrides <code>human_readable_name</code>. What happens when it imports, and what happens to its custom value?</summary><p>The <code>class</code> statement emits a <code>DeprecationWarning</code> pointing at the plugin's line (stop 8). The custom value is ignored, because Click reads <code>spec</code>. The fix is to override <code>spec</code>.</p></details>
+  <details><summary>What would break if <code>spec</code> picked the first declaration instead of the longest prefix?</summary><p><code>test_spec</code> fails on <code>["-t", "--times"]</code>: spec would be <code>-t</code> while name is <code>times</code>, and the last assertion that spec maps back to name fails (stop 9).</p></details>
+  <details><summary>Why can you not use <code>name</code> in a new user-facing message?</summary><p>It is the Python identifier (<code>my_option</code>), which the user never typed. That is the bug this PR fixed (Before and after).</p></details>
+  <div class="callout try"><span class="label">Starter task</span>
+    <p><b>Give false-side-only options a real spec.</b> <code>Option(["shout", " /--no-shout"], is_flag=True)</code> has <code>opts == []</code> and <code>secondary_opts == ["--no-shout"]</code>, so <code>spec</code> and the error hint both return the internal name <code>shout</code>. Make <code>spec</code> fall back to <code>secondary_opts</code> before <code>name</code>.</p>
+    <ul>
+      <li>Code: <code>Parameter.spec</code>, <code>src/click/core.py:2570</code>. Keep the <code>if</code>/return style, no ternary.</li>
+      <li>Also check <code>Parameter.get_error_hint</code> (<code>src/click/core.py:3030</code>), which reads <code>self.opts or [self.spec]</code>.</li>
+      <li>Test: add a case to <code>test_spec</code> in <code>tests/test_options.py:102</code>, or a new test beside <code>test_spec_with_explicit_name</code>. Note the last assertion in <code>test_spec</code> maps spec back to name, which will not hold here, so a separate test is cleaner.</li>
+      <li>Done when <code>python -m pytest tests/test_options.py</code> passes and a <code>CHANGES.md</code> bullet is added. Open an issue first, per <code>.github/pull_request_template.md:2</code>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="next">
+  <h2>Read next</h2>
+  <ul>
+    <li><a href="https://github.com/pallets/click/pull/3821">PR #3821</a>: introduced <code>Option.get_help_spec</code>, the starting point for this one.</li>
+    <li><code>docs/parameters.md</code>, section "Parameter Names": the user-facing version of this page.</li>
+    <li><code>src/click/exceptions.py</code>: every place a parameter's hint ends up in an error.</li>
+    <li><code>docs/upgrade-guides.md</code>: how Click writes deprecations, so yours match.</li>
+  </ul>
+</section>
+</main>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'neutral', flowchart: { htmlLabels: true, curve: 'basis' } });
+try { await mermaid.run({ querySelector: '.mermaid' }); }
+catch (e) { console.error('mermaid', e); }
+document.body.dataset.mermaid = 'done';
+</script>
+<script>
+document.querySelectorAll('pre code[class*="language-"]').forEach(el => { try { hljs.highlightElement(el); } catch (_) {} });
+const toc = document.querySelector('nav.toc ol');
+const sections = [...document.querySelectorAll('main section[id]')];
+sections.forEach(s => {
+  const h = s.querySelector('h2'); if (!h) return;
+  const li = document.createElement('li'); const a = document.createElement('a');
+  a.href = '#' + s.id; a.textContent = h.textContent; li.append(a); toc.append(li);
+});
+const links = new Map([...toc.querySelectorAll('a')].map(a => [a.hash.slice(1), a]));
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); links.get(e.target.id)?.classList.add('active'); }
+}), { rootMargin: '0px 0px -70% 0px' });
+sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>
