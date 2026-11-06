@@ -1,4 +1,4 @@
-# onboarding-walkthrough
+# walkthrough-buddy
 
 An agent skill that turns a pull request, a folder, a feature or a whole repository into one page a newcomer reads once and then ships a change from.
 
@@ -40,20 +40,20 @@ Both examples below were made from public repos, and both are in [`examples/`](e
 
 ## Install
 
-The skill is the folder `skills/onboarding-walkthrough`. Put it where your agent looks for skills.
+The skill is the folder `skills/walkthrough-buddy`. Put it where your agent looks for skills.
 
 **Claude Code**
 
 ```bash
-git clone https://github.com/Arya-A-Nair/onboarding-walkthrough
-ln -s "$PWD/onboarding-walkthrough/skills/onboarding-walkthrough" ~/.claude/skills/onboarding-walkthrough
+git clone https://github.com/Arya-A-Nair/walkthrough-buddy
+ln -s "$PWD/walkthrough-buddy/skills/walkthrough-buddy" ~/.claude/skills/walkthrough-buddy
 ```
 
 **Codex**
 
 ```bash
-git clone https://github.com/Arya-A-Nair/onboarding-walkthrough
-ln -s "$PWD/onboarding-walkthrough/skills/onboarding-walkthrough" ~/.agents/skills/onboarding-walkthrough
+git clone https://github.com/Arya-A-Nair/walkthrough-buddy
+ln -s "$PWD/walkthrough-buddy/skills/walkthrough-buddy" ~/.agents/skills/walkthrough-buddy
 ```
 
 To scope it to one repo, use `.claude/skills/` or `.agents/skills/` inside that repo instead. Copying the folder works as well as linking it.
@@ -61,7 +61,7 @@ To scope it to one repo, use `.claude/skills/` or `.agents/skills/` inside that 
 **Any agent with the `skills` CLI**
 
 ```bash
-npx skills add Arya-A-Nair/onboarding-walkthrough
+npx skills add Arya-A-Nair/walkthrough-buddy
 ```
 
 ## Use

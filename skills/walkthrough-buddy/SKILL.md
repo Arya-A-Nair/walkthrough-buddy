@@ -1,9 +1,9 @@
 ---
-name: onboarding-walkthrough
+name: walkthrough-buddy
 description: Use when someone needs to understand unfamiliar code well enough to change it - a pull request, branch, commit range, folder, feature, request flow or whole repository. Triggers on "walk me through this PR", "explain this codebase", "onboard me to X", "ELI5 this module", "how does X work end to end", new-hire onboarding, handover notes, or orienting a reviewer before a review.
 ---
 
-# Onboarding Walkthrough
+# Walkthrough Buddy
 
 Turn a piece of code into one page a newcomer can read top to bottom and then ship a change. Diagrams show the shape, ELI5 analogies make each idea stick, and real excerpts, pinned to a commit and checked by a script, make sure every claim holds.
 

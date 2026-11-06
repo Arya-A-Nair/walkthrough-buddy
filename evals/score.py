@@ -9,7 +9,7 @@ diagrams        how many Mermaid diagrams render without error (headless browser
 """
 import html, json, os, re, subprocess, sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "skills", "onboarding-walkthrough", "scripts"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "skills", "walkthrough-buddy", "scripts"))
 try:
     import check  # reuse the browser renderer
 except ImportError:
