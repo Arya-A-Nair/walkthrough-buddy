@@ -1,0 +1,10 @@
+{
+  "name": "walkthrough-buddy",
+  "description": "Turn any PR, folder or repo into one onboarding page you can make your first change from: diagrams, ELI5 analogies, real code linked to exact lines, tested commands.",
+  "version": "1.0.0",
+  "author": { "name": "Arya Nair", "url": "https://github.com/Arya-A-Nair" },
+  "homepage": "https://github.com/Arya-A-Nair/walkthrough-buddy",
+  "repository": "https://github.com/Arya-A-Nair/walkthrough-buddy",
+  "license": "MIT",
+  "keywords": ["onboarding", "pull-request", "code-review", "documentation", "eli5", "mermaid", "walkthrough"]
+}

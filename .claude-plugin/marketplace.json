@@ -1,0 +1,12 @@
+{
+  "name": "walkthrough-buddy",
+  "owner": { "name": "Arya Nair", "url": "https://github.com/Arya-A-Nair" },
+  "plugins": [
+    {
+      "name": "walkthrough-buddy",
+      "source": "./",
+      "description": "Turn any PR, folder or repo into one onboarding page you can make your first change from.",
+      "category": "documentation"
+    }
+  ]
+}

@@ -24,6 +24,13 @@
   <a href="#how-it-works">How it works</a>
 </p>
 
+<p align="center">
+  <strong>See a real one:</strong>
+  <a href="https://arya-a-nair.github.io/walkthrough-buddy/examples/click-pr-3877.html">click PR #3877</a> •
+  <a href="https://arya-a-nair.github.io/walkthrough-buddy/examples/click-pr-3877-adhd.html">same PR, ADHD mode</a> •
+  <a href="https://arya-a-nair.github.io/walkthrough-buddy/examples/commander-js.html">all of commander.js</a>
+</p>
+
 ---
 
 A skill for Claude Code and Codex. Point it at a pull request, a folder, a feature or a whole repo, and it builds a walkthrough page for someone who has never seen the code. The page has diagrams of how things connect, an "explain like I'm five" analogy for each hard idea, the real code with links to the exact lines, and a short "how to make your first change here" section at the end.
@@ -102,7 +109,7 @@ A summary you read once and forget. You still don't know where to start, which t
 </tr>
 </table>
 
-Every page follows the same order: **big picture → before/after → glossary → main flow → code tour → how to contribute → check yourself**. Open one of the [`examples/`](examples) in a browser to read a full page.
+Every page follows the same order: **big picture → before/after → glossary → main flow → code tour → how to contribute → check yourself**. Read a full page: [click PR #3877](https://arya-a-nair.github.io/walkthrough-buddy/examples/click-pr-3877.html), [the ADHD version](https://arya-a-nair.github.io/walkthrough-buddy/examples/click-pr-3877-adhd.html), or [all of commander.js](https://arya-a-nair.github.io/walkthrough-buddy/examples/commander-js.html).
 
 ## ADHD mode
 
@@ -123,10 +130,17 @@ Say *"I have ADHD"* or *"make it easier to read"*. You get the same content, cut
 
 ## Install
 
-Paste this into Claude Code or Codex:
+Any agent (Claude Code, Codex, Cursor and others), with the [skills](https://skills.sh) CLI:
+
+```bash
+npx skills add Arya-A-Nair/walkthrough-buddy
+```
+
+As a Claude Code plugin:
 
 ```text
-Install the walkthrough-buddy skill from https://github.com/Arya-A-Nair/walkthrough-buddy
+/plugin marketplace add Arya-A-Nair/walkthrough-buddy
+/plugin install walkthrough-buddy@walkthrough-buddy
 ```
 
 Or by hand:
